@@ -7,40 +7,78 @@
     <style>
       :root {
         color-scheme: light dark;
-        --border: #d0d7de;
-        --muted: #656d76;
+        --bg: #ffffff;
+        --fg: #1f2328;
+        --muted: #59636e;
+        --border: #d1d9e0;
+        --surface: #f6f8fa;
         --accent: #0969da;
+        --accent-fg: #ffffff;
+        --pending: #9a6700;
+        --paid: #1a7f37;
+        --bad: #cf222e;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0d1117;
+          --fg: #e6edf3;
+          --muted: #9198a1;
+          --border: #3d444d;
+          --surface: #151b23;
+          --accent: #1f6feb;
+          --accent-fg: #ffffff;
+          --pending: #d29922;
+          --paid: #3fb950;
+          --bad: #f85149;
+        }
       }
       * {
         box-sizing: border-box;
       }
+      [hidden] {
+        display: none !important;
+      }
       body {
-        margin: 0;
+        margin: 0 auto;
+        max-width: 960px;
         font-family:
           system-ui,
           -apple-system,
           "Segoe UI",
           sans-serif;
         line-height: 1.5;
-        padding: 24px;
+        padding: 32px 24px 64px;
+        background: var(--bg);
+        color: var(--fg);
       }
       h1 {
-        font-size: 1.4rem;
-        margin: 0 0 4px;
+        font-size: 1.5rem;
+        margin: 0 0 6px;
       }
       h2 {
         font-size: 1.05rem;
-        margin: 0 0 12px;
+        margin: 0 0 4px;
+      }
+      p {
+        margin: 0;
       }
       p.lead {
         color: var(--muted);
-        margin: 0 0 24px;
+        margin-bottom: 28px;
+      }
+      p.hint,
+      p.step {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      p.step {
+        margin-bottom: 14px;
       }
       section {
         border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 18px;
       }
       .grid {
         display: grid;
@@ -56,19 +94,30 @@
       input,
       select {
         font: inherit;
-        padding: 6px 8px;
+        padding: 7px 9px;
         border: 1px solid var(--border);
         border-radius: 6px;
-        background: transparent;
-        color: inherit;
+        background: var(--surface);
+        color: var(--fg);
+      }
+      select option {
+        background: var(--surface);
+        color: var(--fg);
+      }
+      input:focus-visible,
+      select:focus-visible,
+      button:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
       }
       button {
         font: inherit;
-        padding: 6px 12px;
+        padding: 7px 14px;
         border-radius: 6px;
         border: 1px solid var(--accent);
         background: var(--accent);
-        color: #fff;
+        color: var(--accent-fg);
         cursor: pointer;
       }
       button.secondary {
@@ -76,92 +125,166 @@
         color: var(--accent);
       }
       button:disabled {
-        opacity: 0.5;
+        opacity: 0.55;
         cursor: not-allowed;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
       }
       .actions {
         display: flex;
         gap: 8px;
-        margin-top: 12px;
+        margin-top: 14px;
         flex-wrap: wrap;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .badge.ok {
+        color: var(--paid);
+        border-color: var(--paid);
+      }
+      .badge.error {
+        color: var(--bad);
+        border-color: var(--bad);
       }
       table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.9rem;
+        margin-top: 14px;
       }
       th,
       td {
         text-align: left;
-        padding: 8px;
+        padding: 9px 8px;
         border-bottom: 1px solid var(--border);
         vertical-align: top;
       }
+      th {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
       td.mono,
+      code,
       pre {
         font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
         font-size: 0.82rem;
       }
+      code {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 1px 5px;
+        word-break: break-all;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 8px 14px;
+        margin: 14px 0 0;
+        font-size: 0.9rem;
+      }
+      dt {
+        color: var(--muted);
+      }
+      dd {
+        margin: 0;
+        word-break: break-all;
+      }
       pre {
-        background: rgba(127, 127, 127, 0.1);
+        background: var(--surface);
+        border: 1px solid var(--border);
         padding: 12px;
         border-radius: 6px;
         overflow: auto;
         max-height: 320px;
         white-space: pre-wrap;
-        word-break: break-all;
       }
       .status {
         font-weight: 600;
       }
       .status-PENDING {
-        color: #9a6700;
+        color: var(--pending);
       }
       .status-PAID {
-        color: #1a7f37;
+        color: var(--paid);
       }
       .status-EXPIRED,
       .status-FAILED {
-        color: #cf222e;
+        color: var(--bad);
       }
-      .hint {
+      .error {
+        color: var(--bad);
+        font-size: 0.85rem;
+        margin-top: 10px;
+      }
+      summary {
+        cursor: pointer;
         color: var(--muted);
         font-size: 0.85rem;
-        margin: 8px 0 0;
       }
     </style>
   </head>
   <body>
     <h1>idnpay-sandbox</h1>
-    <p class="lead">A dashboard for manual testing. Use it in development only.</p>
+    <p class="lead">
+      A dashboard for manual testing. Three steps: connect, create a charge, then send the webhook by changing
+      the transaction status.
+    </p>
 
     <section>
-      <h2>Client key</h2>
-      <label>
-        X-Client-Key
-        <input id="clientKey" type="password" autocomplete="off" placeholder="idnpay-dev-client-key" />
-      </label>
-      <p class="hint">Stored in this tab's sessionStorage. It is not sent anywhere except the simulator.</p>
+      <h2>1. Connect</h2>
+      <p class="step">The simulator rejects requests without a valid key.</p>
+      <div class="grid">
+        <label>
+          X-Client-Key
+          <input id="keyInput" type="password" autocomplete="off" placeholder="idnpay-dev-client-key" />
+        </label>
+        <div class="row" style="align-items: flex-end; padding-bottom: 1px">
+          <button id="testKey" type="button" class="secondary">Test connection</button>
+          <span id="keyStatus" class="badge">Not checked</span>
+        </div>
+      </div>
+      <p class="hint">
+        This is <code>CLIENT_KEY</code> from your <code>.env</code> or <code>docker-compose.yml</code>. The
+        default is <code>idnpay-dev-client-key</code>. The value stays in this tab only.
+      </p>
     </section>
 
     <section>
-      <h2>Create a charge</h2>
+      <h2>2. Create a charge</h2>
+      <p class="step">Pick a payment type. The form shows only the fields that type needs.</p>
       <form id="chargeForm">
         <div class="grid">
-          <label>order_id <input name="order_id" required maxlength="50" value="ORDER-1001" /></label>
           <label
-            >gross_amount (IDR) <input name="gross_amount" type="number" min="1" required value="150000"
+            >order_id
+            <input name="order_id" required maxlength="50" pattern="[A-Za-z0-9._-]+" value="ORDER-1001"
+          /></label>
+          <label
+            >gross_amount (IDR)
+            <input name="gross_amount" type="number" min="1" max="100000000" required value="150000"
           /></label>
           <label>
             payment_type
-            <select name="payment_type">
+            <select name="payment_type" id="paymentType">
               <option value="qris">qris</option>
               <option value="bank_transfer">bank_transfer</option>
               <option value="ewallet">ewallet</option>
             </select>
           </label>
-          <label>
-            bank (bank_transfer)
+          <label id="bankField" hidden>
+            bank
             <select name="bank">
               <option value="bca">bca</option>
               <option value="mandiri">mandiri</option>
@@ -170,8 +293,8 @@
               <option value="permata">permata</option>
             </select>
           </label>
-          <label>
-            ewallet (ewallet)
+          <label id="ewalletField" hidden>
+            ewallet
             <select name="ewallet">
               <option value="gopay">gopay</option>
               <option value="ovo">ovo</option>
@@ -179,21 +302,43 @@
               <option value="dana">dana</option>
             </select>
           </label>
-          <label
-            >callback_url
-            <input name="callback_url" required value="http://host.docker.internal:8000/api/payments/webhook"
-          /></label>
+          <label>
+            callback_url
+            <input
+              name="callback_url"
+              required
+              value="http://host.docker.internal:8000/api/payments/webhook"
+            />
+          </label>
         </div>
         <div class="actions">
-          <button type="submit">Create charge</button>
+          <button type="submit" id="submitCharge">Create charge</button>
         </div>
+        <p id="formError" class="error" hidden></p>
       </form>
+      <p class="hint">
+        The callback URL receives the webhook. If your app runs on the host and the simulator runs in Docker,
+        use
+        <code>host.docker.internal</code> instead of <code>localhost</code>.
+      </p>
+    </section>
+
+    <section id="chargeResult" hidden>
+      <h2>Charge created</h2>
+      <p class="step">Keep this. You need the payment details to finish the flow.</p>
+      <dl id="chargeDetails"></dl>
+      <p class="hint" id="chargeHint"></p>
     </section>
 
     <section>
-      <div class="actions" style="margin-top: 0; justify-content: space-between; align-items: center">
-        <h2 style="margin: 0">Transactions</h2>
-        <button id="refresh" class="secondary" type="button">Refresh</button>
+      <div class="row" style="justify-content: space-between">
+        <div>
+          <h2>3. Send the webhook</h2>
+          <p class="step">
+            Use Pay, Fail, or Expire on a PENDING transaction. Each click sends one signed webhook.
+          </p>
+        </div>
+        <button id="refresh" type="button" class="secondary">Refresh</button>
       </div>
       <table>
         <thead>
@@ -207,11 +352,14 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
+      <p class="hint">The list refreshes every 3 seconds while this tab is visible.</p>
     </section>
 
     <section>
-      <h2>Last response</h2>
-      <pre id="output">No request yet.</pre>
+      <details>
+        <summary>Last response</summary>
+        <pre id="output">No request yet.</pre>
+      </details>
     </section>
 
     <script src="/app.js"></script>

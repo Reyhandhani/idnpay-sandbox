@@ -16,7 +16,7 @@ First release.
 - In-memory queue fallback when Redis is unavailable, and automatic Redis reconnection
 - Transaction store limit through `TRANSACTION_STORE_LIMIT`
 - Simulated latency and random failures
-- Browser dashboard
+- Browser dashboard with a connection test and a three-step flow
 - Error codes `TRANSACTION_BUSY`, `QUEUE_UNAVAILABLE`, and `STORE_FULL`
 - ESLint, Prettier, and CI on Node.js 22 and 24 with a real Redis, plus a Docker image build
 - Test coverage gate: at least 90% lines, 85% branches and functions
