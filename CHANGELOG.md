@@ -19,6 +19,9 @@ Rilis pertama.
 - Dashboard di browser
 - Error code `TRANSACTION_BUSY`, `QUEUE_UNAVAILABLE`, dan `STORE_FULL`
 - ESLint, Prettier, dan CI di Node.js 22 dan 24 dengan Redis sungguhan, plus build image Docker
+- Gerbang cakupan test: minimal 90% baris dan 85% cabang serta fungsi
+- Test konsistensi dashboard dan payload webhook
+- Panduan deploy, termasuk alasan simulator tidak cocok dijalankan di serverless
 - Dokumentasi API, webhook, konfigurasi, dan arsitektur
 
 ### Keamanan

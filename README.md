@@ -101,6 +101,7 @@ Nomor VA memakai awalan khas tiap bank supaya gampang dikenali. Deep-link e-Wall
 - [Webhook](docs/WEBHOOK.md): format, cara verifikasi signature, dan retry
 - [Konfigurasi](docs/CONFIGURATION.md): semua variabel lingkungan
 - [Arsitektur](docs/ARCHITECTURE.md): cara komponennya bekerja dan apa yang terjadi saat ada kegagalan
+- [Deploy](docs/DEPLOYMENT.md): kenapa butuh container, bukan serverless
 - [Kontribusi](CONTRIBUTING.md): cara menyiapkan lingkungan dan mengirim perubahan
 - [Kode etik](CODE_OF_CONDUCT.md)
 - [Keamanan](SECURITY.md): cara melaporkan kerentanan
@@ -110,8 +111,9 @@ Nomor VA memakai awalan khas tiap bank supaya gampang dikenali. Deep-link e-Wall
 
 ```bash
 npm ci
-npm run ci        # format, lint, typecheck, test, build
-npm test          # hanya test
+npm run ci              # format, lint, typecheck, test dengan cakupan, build
+npm test                # hanya test
+npm run test:coverage   # test dengan gerbang cakupan (90% baris, 85% cabang dan fungsi)
 ```
 
 Test integrasi Redis hanya jalan kalau `TEST_REDIS_URL` diisi:

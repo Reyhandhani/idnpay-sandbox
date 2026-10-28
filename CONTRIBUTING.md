@@ -43,6 +43,7 @@ TEST_REDIS_URL=redis://127.0.0.1:6379 npm test
 ## Test
 
 - Setiap perubahan perilaku perlu test.
+- `npm run test:coverage` dipakai di CI dan akan gagal kalau cakupan turun di bawah 90% baris atau 85% cabang dan fungsi.
 - Test ada di `test/`. Helper bersama ada di `test/helpers.ts` dan `test/support/`.
 - Untuk logika yang bergantung waktu, pakai `manualClock` dari `test/helpers.ts`. Hindari `setTimeout` yang panjang di test.
 
