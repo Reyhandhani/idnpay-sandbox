@@ -2,6 +2,28 @@
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.1.1] - 2026-10-28
+
+### Added
+
+- `SIMULATED_FAILURE_STATUS`, so a failing call can return 504 or any other 4xx/5xx status
+- A Midtrans-compatible subset under `/v2`, with `signature_key` webhooks
+- `Idempotency-Key` support on both charge endpoints
+- A CI guide with a GitHub Actions recipe, a two-container compose example, and edge-case recipes
+- `DESIGN.md`, recording the visual direction and the reason for each choice
+- A request flow diagram and a social preview image
+
+### Changed
+
+- README now opens with why the project exists and what it does not do
+- Dashboard: sentence-case labels, a manual light and dark toggle, 44px tap targets, a scrollable table, and explicit empty, loading, and error states
+- Code comments trimmed to the constraint they document
+
+### Fixed
+
+- README claimed Virtual Account prefixes were real bank numbers. They are illustrative.
+- `dist/` is removed before build and test, so deleted modules cannot run from stale output.
+
 ## [0.1.0] - 2026-10-28
 
 First release.
@@ -15,7 +37,7 @@ First release.
 - Automatic recovery of jobs whose lease expired (Redis queue)
 - In-memory queue fallback when Redis is unavailable, and automatic Redis reconnection
 - Transaction store limit through `TRANSACTION_STORE_LIMIT`
-- Simulated latency and random failures
+- Simulated latency and random failures, with a configurable failure status
 - Browser dashboard with a connection test and a three-step flow
 - Error codes `TRANSACTION_BUSY`, `QUEUE_UNAVAILABLE`, and `STORE_FULL`
 - ESLint, Prettier, and CI on Node.js 22 and 24 with a real Redis, plus a Docker image build
