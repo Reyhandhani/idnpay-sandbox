@@ -3,6 +3,11 @@ name: Release image
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to publish, for example v0.1.1"
+        required: true
 
 permissions:
   contents: read
@@ -13,8 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
 
       - uses: docker/setup-buildx-action@v3
+
+      - name: Set image name and tag
+        run: |
+          echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          echo "TAG=${{ inputs.tag || github.ref_name }}" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -29,14 +41,14 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:latest
+            ${{ env.IMAGE }}:${{ env.TAG }}
+            ${{ env.IMAGE }}:latest
 
       - name: Smoke test the published tag
         run: |
           docker run -d --name simulator -p 9000:9000 \
             -e CLIENT_KEY=ci-client -e SECRET_KEY=ci-secret \
-            "ghcr.io/${{ github.repository }}:${{ github.ref_name }}"
+            "${{ env.IMAGE }}:${{ env.TAG }}"
           for attempt in $(seq 1 20); do
             if curl -fsS http://127.0.0.1:9000/health; then exit 0; fi
             sleep 1
