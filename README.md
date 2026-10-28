@@ -3,6 +3,7 @@
 [![CI](https://github.com/Reyhandhani/idnpay-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/Reyhandhani/idnpay-sandbox/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
+[![Release](https://img.shields.io/github/v/release/Reyhandhani/idnpay-sandbox?include_prereleases&sort=semver)](https://github.com/Reyhandhani/idnpay-sandbox/releases)
 
 A local payment gateway simulator for Indonesia. Use it to test QRIS, Virtual Account, and e-Wallet flows without a third-party sandbox that goes down or rate limits you.
 

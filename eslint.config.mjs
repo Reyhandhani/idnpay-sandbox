@@ -22,7 +22,7 @@ export default tseslint.config(
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
-      // Implementasi antarmuka async (antrean, plugin Fastify) sering tidak memerlukan await.
+      // Async interface implementations (queues, Fastify plugins) often have nothing to await.
       "@typescript-eslint/require-await": "off",
       eqeqeq: ["error", "always"],
       "no-console": "error",
@@ -31,7 +31,7 @@ export default tseslint.config(
   {
     files: ["src/index.ts"],
     rules: {
-      // Pesan kesalahan startup ditulis langsung ke stderr karena logger belum tersedia.
+      // Startup errors go straight to stderr because no logger exists yet.
       "no-console": "off",
     },
   },
