@@ -40,7 +40,7 @@ class FlakyEnqueueQueue extends MemoryWebhookQueue {
 
   override async enqueue(item: Parameters<MemoryWebhookQueue["enqueue"]>[0]): Promise<void> {
     if (this.enqueueFails) {
-      throw new Error("Redis tidak tersedia");
+      throw new Error("Redis is unavailable");
     }
     await super.enqueue(item);
   }
@@ -59,7 +59,7 @@ function createWorker(queue: WebhookQueue, clock: () => number, fetchImpl: typeo
 }
 
 describe("WebhookWorker", () => {
-  it("mengirim webhook dengan header signature dan timestamp, lalu meng-ack job yang berhasil", async () => {
+  it("sends signature and timestamp headers, then acks the delivered job", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl, calls } = scriptedFetch([200]);
@@ -78,7 +78,7 @@ describe("WebhookWorker", () => {
     assert.deepEqual(await queue.claimDue(clock.now(), 10, LEASE_MS), []);
   });
 
-  it("menjadwalkan ulang dengan backoff 2^n × 1000 ms setelah respons non-2xx", async () => {
+  it("reschedules with 2^n × 1000 ms backoff after a non-2xx response", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl } = scriptedFetch([500]);
@@ -91,7 +91,7 @@ describe("WebhookWorker", () => {
     assert.equal(retry?.job.failures, 1);
   });
 
-  it("memperpanjang jeda pada setiap kegagalan berturut-turut", async () => {
+  it("grows the delay after each consecutive failure", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl } = scriptedFetch([500, 500]);
@@ -112,7 +112,7 @@ describe("WebhookWorker", () => {
     assert.equal(second?.job.failures, 2);
   });
 
-  it("berhenti setelah batas percobaan tercapai dan meng-ack job tersebut", async () => {
+  it("gives up after the retry limit and acks the job", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl, calls } = scriptedFetch([500]);
@@ -126,7 +126,7 @@ describe("WebhookWorker", () => {
     assert.deepEqual(await queue.claimDue(clock.now() + 3_600_000, 10, LEASE_MS), []);
   });
 
-  it("memperlakukan kegagalan jaringan sama seperti respons non-2xx", async () => {
+  it("treats network errors like non-2xx responses", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl } = scriptedFetch([new Error("ECONNREFUSED")]);
@@ -138,7 +138,7 @@ describe("WebhookWorker", () => {
     assert.equal(retry?.job.failures, 1);
   });
 
-  it("tidak meng-ack job jika penjadwalan ulang gagal, sehingga job dipulihkan setelah lease", async () => {
+  it("leaves the job unacked when rescheduling fails, so it recovers after the lease", async () => {
     const clock = manualClock();
     const queue = new FlakyEnqueueQueue();
     const { fetchImpl } = scriptedFetch([500]);
@@ -151,7 +151,7 @@ describe("WebhookWorker", () => {
     assert.equal(await queue.recoverExpired(clock.now()), 1);
   });
 
-  it("menjalankan job yang sudah jatuh tempo saja", async () => {
+  it("only runs jobs that are due", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     const { fetchImpl, calls } = scriptedFetch([200]);

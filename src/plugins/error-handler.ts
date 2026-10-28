@@ -14,11 +14,11 @@ interface ValidationViolation {
   readonly params: Record<string, unknown>;
 }
 
-/** Menjadikan seluruh respons kesalahan berbentuk sama, dengan pesan dalam Bahasa Indonesia. */
+/** Gives every error response the same shape, with a short English message. */
 export function registerErrorHandling(app: FastifyInstance): void {
   app.setErrorHandler(handleError);
   app.setNotFoundHandler((request, reply) =>
-    reply.code(404).send(body("404", `Rute ${request.method} ${request.url} tidak ditemukan.`, "NOT_FOUND")),
+    reply.code(404).send(body("404", `Route ${request.method} ${request.url} was not found.`, "NOT_FOUND")),
   );
 }
 
@@ -29,7 +29,7 @@ function handleError(error: FastifyError, request: FastifyRequest, reply: Fastif
 
   if (error.validation) {
     return reply.code(400).send({
-      ...body("400", "Permintaan tidak valid. Periksa field yang ditandai.", "VALIDATION_ERROR"),
+      ...body("400", "Request validation failed. Check the fields listed in details.", "VALIDATION_ERROR"),
       details: error.validation.map(describeViolation),
     });
   }
@@ -40,14 +40,14 @@ function handleError(error: FastifyError, request: FastifyRequest, reply: Fastif
       .send(
         body(
           String(error.statusCode),
-          "Body JSON tidak dapat dibaca. Pastikan Content-Type application/json.",
+          "Request body is not valid JSON. Check that Content-Type is application/json.",
           "BAD_REQUEST",
         ),
       );
   }
 
-  request.log.error({ err: error }, "Terjadi kesalahan tidak terduga.");
-  return reply.code(500).send(body("500", "Terjadi kesalahan internal.", "INTERNAL_ERROR"));
+  request.log.error({ err: error }, "Unexpected server error.");
+  return reply.code(500).send(body("500", "Internal server error.", "INTERNAL_ERROR"));
 }
 
 function body(statusCode: string, message: string, errorCode: string): ErrorBody {

@@ -17,7 +17,7 @@ export interface TransactionView {
   deeplink_url?: string;
 }
 
-/** Bentuk respons publik sebuah transaksi, dipakai oleh endpoint charge dan status. */
+/** Public shape of a transaction, used by the charge and status endpoints. */
 export function toTransactionView(transaction: Transaction): TransactionView {
   const view: TransactionView = {
     status_code: STATUS_CODES[transaction.status],

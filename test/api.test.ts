@@ -55,7 +55,7 @@ function chargePayload(overrides: Record<string, unknown> = {}) {
   };
 }
 
-describe("API idnpay-sandbox", () => {
+describe("idnpay-sandbox API", () => {
   let harness: Harness;
 
   beforeEach(async () => {
@@ -66,8 +66,8 @@ describe("API idnpay-sandbox", () => {
     await harness.app.close();
   });
 
-  describe("autentikasi", () => {
-    it("menolak request tanpa X-Client-Key", async () => {
+  describe("authentication", () => {
+    it("rejects requests without X-Client-Key", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -77,7 +77,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.json().error_code, "UNAUTHORIZED");
     });
 
-    it("menolak X-Client-Key yang salah", async () => {
+    it("rejects a wrong X-Client-Key", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -87,14 +87,14 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.statusCode, 401);
     });
 
-    it("endpoint health tidak memerlukan autentikasi", async () => {
+    it("health needs no authentication", async () => {
       const response = await harness.app.inject({ method: "GET", url: "/health" });
       assert.equal(response.statusCode, 200);
     });
   });
 
   describe("POST /v1/charge", () => {
-    it("membuat transaksi QRIS dengan status PENDING", async () => {
+    it("creates a PENDING QRIS transaction", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -112,7 +112,7 @@ describe("API idnpay-sandbox", () => {
       assert.match(body.expiry_time, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     });
 
-    it("membuat Virtual Account dengan awalan bank yang sesuai", async () => {
+    it("creates a Virtual Account with the bank prefix", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -127,7 +127,7 @@ describe("API idnpay-sandbox", () => {
       assert.ok(body.va_number.startsWith("14391"));
     });
 
-    it("membuat deep-link e-wallet", async () => {
+    it("creates an e-wallet deeplink", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -139,7 +139,7 @@ describe("API idnpay-sandbox", () => {
       assert.match(response.json().deeplink_url, /^gojek:\/\/gopay\/pay\?ref=trx-/);
     });
 
-    it("menolak bank_transfer tanpa field bank", async () => {
+    it("rejects bank_transfer without a bank", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -151,7 +151,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.json().error_code, "VALIDATION_ERROR");
     });
 
-    it("menolak nominal nol atau negatif", async () => {
+    it("rejects zero or negative amounts", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -161,7 +161,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.statusCode, 400);
     });
 
-    it("menyebutkan field yang tidak valid dalam details", async () => {
+    it("lists invalid fields in details", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -176,7 +176,7 @@ describe("API idnpay-sandbox", () => {
       assert.ok(fields.includes("callback_url"));
     });
 
-    it("menolak callback_url dengan protokol selain http dan https", async () => {
+    it("rejects callback_url with a protocol other than http or https", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -186,7 +186,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.statusCode, 400);
     });
 
-    it("menolak field yang tidak dikenal", async () => {
+    it("rejects unknown fields", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -196,7 +196,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.statusCode, 400);
     });
 
-    it("menolak order_id yang sudah pernah digunakan", async () => {
+    it("rejects a reused order_id", async () => {
       await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -215,7 +215,7 @@ describe("API idnpay-sandbox", () => {
     });
   });
 
-  describe("simulasi pembayaran", () => {
+  describe("payment simulation", () => {
     async function createPending(orderId = "ORDER-SIM") {
       const response = await harness.app.inject({
         method: "POST",
@@ -226,7 +226,7 @@ describe("API idnpay-sandbox", () => {
       return response.json<{ transaction_id: string }>();
     }
 
-    it("mengubah status menjadi PAID dan mengirim webhook bertanda tangan", async () => {
+    it("moves the transaction to PAID and sends a signed webhook", async () => {
       const transaction = await createPending();
 
       const response = await harness.app.inject({
@@ -255,7 +255,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(delivery.headers["x-idnpay-signature"], expected);
     });
 
-    it("menolak pembayaran kedua untuk transaksi yang sudah PAID", async () => {
+    it("rejects a second payment once PAID", async () => {
       const transaction = await createPending();
       const payload = { transaction_id: transaction.transaction_id };
       await harness.app.inject({ method: "POST", url: "/v1/simulate/pay", headers: authHeaders, payload });
@@ -270,7 +270,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.json().error_code, "INVALID_TRANSACTION_STATE");
     });
 
-    it("mengubah status menjadi FAILED lewat simulasi gagal", async () => {
+    it("moves the transaction to FAILED", async () => {
       const transaction = await createPending();
       const response = await harness.app.inject({
         method: "POST",
@@ -282,20 +282,20 @@ describe("API idnpay-sandbox", () => {
       assert.equal(response.json().status_code, "202");
     });
 
-    it("mengembalikan 404 untuk transaksi yang tidak ada", async () => {
+    it("returns 404 for an unknown transaction", async () => {
       const response = await harness.app.inject({
         method: "POST",
         url: "/v1/simulate/pay",
         headers: authHeaders,
-        payload: { transaction_id: "trx-tidak-ada" },
+        payload: { transaction_id: "trx-does-not-exist" },
       });
       assert.equal(response.statusCode, 404);
       assert.equal(response.json().error_code, "TRANSACTION_NOT_FOUND");
     });
   });
 
-  describe("kedaluwarsa", () => {
-    it("mengubah transaksi PENDING menjadi EXPIRED setelah batas waktu dan mengirim webhook", async () => {
+  describe("expiry", () => {
+    it("expires a PENDING transaction after the deadline and sends a webhook", async () => {
       const created = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -318,7 +318,7 @@ describe("API idnpay-sandbox", () => {
       assert.equal(harness.deliveries.length, 1);
     });
 
-    it("tidak dapat dibayar setelah kedaluwarsa", async () => {
+    it("cannot be paid after expiry", async () => {
       const created = await harness.app.inject({
         method: "POST",
         url: "/v1/charge",
@@ -338,7 +338,7 @@ describe("API idnpay-sandbox", () => {
   });
 
   describe("GET /v1/transactions", () => {
-    it("mengembalikan daftar transaksi terbaru beserta total", async () => {
+    it("returns transactions newest first with a total", async () => {
       await harness.app.inject({
         method: "POST",
         url: "/v1/charge",

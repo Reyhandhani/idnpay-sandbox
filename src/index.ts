@@ -8,11 +8,11 @@ async function main(): Promise<void> {
   const app = await buildApp(config);
 
   const shutdown = (signal: NodeJS.Signals) => {
-    app.log.info({ signal }, "Menghentikan server.");
+    app.log.info({ signal }, "Shutting down.");
     app.close().then(
       () => process.exit(0),
       (error: unknown) => {
-        app.log.error({ err: describeError(error) }, "Gagal menghentikan server.");
+        app.log.error({ err: describeError(error) }, "Failed to shut down cleanly.");
         process.exit(1);
       },
     );
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   if (error instanceof ConfigError) {
-    console.error(`Konfigurasi tidak valid: ${error.message}`);
+    console.error(`Invalid configuration: ${error.message}`);
   } else {
     console.error(error);
   }

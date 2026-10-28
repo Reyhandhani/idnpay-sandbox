@@ -17,10 +17,10 @@ function scheduled(id: string, runAt: number): ScheduledJob {
   return { runAt, job };
 }
 
-/** Uji kontrak yang wajib dipenuhi setiap implementasi WebhookQueue. */
+/** Contract every WebhookQueue implementation must satisfy. */
 export function defineQueueContract(name: string, create: () => WebhookQueue): void {
-  describe(`kontrak antrean webhook (${name})`, () => {
-    it("hanya mengklaim job yang sudah jatuh tempo, urut berdasarkan waktu", async () => {
+  describe(`webhook queue contract (${name})`, () => {
+    it("claims only due jobs, ordered by time", async () => {
       const queue = create();
       await queue.enqueue(scheduled("late", 3000));
       await queue.enqueue(scheduled("early", 1000));
@@ -33,7 +33,7 @@ export function defineQueueContract(name: string, create: () => WebhookQueue): v
       );
     });
 
-    it("job yang sudah diklaim tidak diklaim ulang selama lease masih berlaku", async () => {
+    it("claimed jobs are not claimed again while the lease is valid", async () => {
       const queue = create();
       await queue.enqueue(scheduled("once", 1000));
 
@@ -41,7 +41,7 @@ export function defineQueueContract(name: string, create: () => WebhookQueue): v
       assert.equal((await queue.claimDue(1000 + LEASE_MS - 1, 10, LEASE_MS)).length, 0);
     });
 
-    it("membatasi jumlah job yang diklaim sesuai limit", async () => {
+    it("respects the claim limit", async () => {
       const queue = create();
       for (let i = 0; i < 5; i++) {
         await queue.enqueue(scheduled(`job-${i}`, 100));
@@ -51,7 +51,7 @@ export function defineQueueContract(name: string, create: () => WebhookQueue): v
       assert.equal((await queue.claimDue(100, 10, LEASE_MS)).length, 3);
     });
 
-    it("job yang sudah di-ack tidak dipulihkan meski lease-nya sudah lewat", async () => {
+    it("acked jobs are not recovered after the lease expires", async () => {
       const queue = create();
       await queue.enqueue(scheduled("acked", 1000));
       const [claimed] = await queue.claimDue(1000, 10, LEASE_MS);
@@ -63,7 +63,7 @@ export function defineQueueContract(name: string, create: () => WebhookQueue): v
       assert.equal((await queue.claimDue(1000 + LEASE_MS * 10, 10, LEASE_MS)).length, 0);
     });
 
-    it("job tanpa ack dipulihkan setelah lease berakhir dan dapat diklaim lagi", async () => {
+    it("unacked jobs are recovered after the lease expires and can be claimed again", async () => {
       const queue = create();
       await queue.enqueue(scheduled("crashed", 1000));
       const [first] = await queue.claimDue(1000, 10, LEASE_MS);

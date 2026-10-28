@@ -7,8 +7,8 @@ export interface SignableWebhook {
 }
 
 /**
- * Menghasilkan signature HMAC-SHA256 dalam format hex.
- * Pesan yang ditandatangani: order_id + status_code + gross_amount, dengan SECRET_KEY sebagai kunci.
+ * Returns an HMAC-SHA256 signature as hex.
+ * The signed message is order_id + status_code + gross_amount, keyed by SECRET_KEY.
  */
 export function signWebhook(payload: SignableWebhook, secretKey: string): string {
   const message = `${payload.orderId}${payload.statusCode}${payload.grossAmount}`;

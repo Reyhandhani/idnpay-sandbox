@@ -1,7 +1,7 @@
 # Normalisasi akhir baris ke LF di repositori.
 * text=auto eol=lf
 
-# Berkas biner tidak boleh dinormalisasi.
+# Binary files must not be normalized.
 *.png binary
 *.jpg binary
 *.gif binary

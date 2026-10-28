@@ -5,7 +5,7 @@ import { TransactionStore } from "../src/services/transaction-store";
 import { makeTransaction } from "./helpers";
 
 describe("TransactionStore", () => {
-  it("menyimpan dan mencari transaksi berdasarkan ID", () => {
+  it("stores and finds transactions by id", () => {
     const store = new TransactionStore({ maxSize: 10 });
     const transaction = makeTransaction({ transaction_id: "trx-a" });
 
@@ -15,7 +15,7 @@ describe("TransactionStore", () => {
     assert.equal(store.findAll().length, 1);
   });
 
-  it("menolak order_id yang sudah ada", () => {
+  it("rejects a duplicate order_id", () => {
     const store = new TransactionStore({ maxSize: 10 });
     store.insert(makeTransaction({ transaction_id: "trx-a", order_id: "ORDER-1" }));
 
@@ -25,7 +25,7 @@ describe("TransactionStore", () => {
     );
   });
 
-  it("menghapus transaksi terminal paling lama saat kapasitas penuh", () => {
+  it("evicts the oldest finished transaction when full", () => {
     const store = new TransactionStore({ maxSize: 2 });
     store.insert(makeTransaction({ transaction_id: "trx-old", order_id: "O-1", status: "PAID" }));
     store.insert(makeTransaction({ transaction_id: "trx-pending", order_id: "O-2", status: "PENDING" }));
@@ -38,7 +38,7 @@ describe("TransactionStore", () => {
     assert.equal(store.findAll().length, 2);
   });
 
-  it("melepas order_id dari transaksi yang dihapus sehingga bisa digunakan kembali", () => {
+  it("releases order_id when a transaction is evicted", () => {
     const store = new TransactionStore({ maxSize: 2 });
     store.insert(makeTransaction({ transaction_id: "trx-old", order_id: "O-1", status: "EXPIRED" }));
     store.insert(makeTransaction({ transaction_id: "trx-other", order_id: "O-2" }));
@@ -49,7 +49,7 @@ describe("TransactionStore", () => {
     assert.ok(store.findById("trx-reused"));
   });
 
-  it("menolak transaksi baru dengan STORE_FULL jika semua transaksi masih PENDING", () => {
+  it("rejects a new transaction with STORE_FULL while everything is PENDING", () => {
     const store = new TransactionStore({ maxSize: 1 });
     store.insert(makeTransaction({ transaction_id: "trx-a", order_id: "O-1" }));
 

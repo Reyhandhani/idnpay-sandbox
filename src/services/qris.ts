@@ -1,7 +1,7 @@
 /**
- * Pembuat payload QRIS dinamis berdasarkan spesifikasi EMVCo Merchant-Presented QR.
- * Setiap field dikodekan sebagai TLV (tag 2 digit, panjang 2 digit, nilai),
- * lalu diakhiri dengan checksum CRC-16/CCITT-FALSE pada tag 63.
+ * Builds a dynamic QRIS payload following the EMVCo Merchant-Presented QR spec.
+ * Every field is TLV encoded (two-digit tag, two-digit length, value) and the payload
+ * ends with a CRC-16/CCITT-FALSE checksum in tag 63.
  */
 
 const NMID = "ID1025000000001";
@@ -20,7 +20,7 @@ export interface QrisInput {
 
 function tlv(tag: string, value: string): string {
   if (value.length > 99) {
-    throw new RangeError(`Nilai untuk tag ${tag} melebihi 99 karakter.`);
+    throw new RangeError(`Value for tag ${tag} exceeds 99 characters.`);
   }
   return `${tag}${value.length.toString().padStart(2, "0")}${value}`;
 }

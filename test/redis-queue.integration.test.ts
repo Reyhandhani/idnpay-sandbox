@@ -9,12 +9,12 @@ import type { WebhookJob } from "../src/types";
 import { defineQueueContract, LEASE_MS } from "./support/queue-contract";
 
 /**
- * Pengujian ini membutuhkan Redis sungguhan. Jalankan dengan:
+ * These tests need a real Redis. Run them with:
  *   TEST_REDIS_URL=redis://127.0.0.1:6379 npm test
  */
 const redisUrl = process.env.TEST_REDIS_URL;
 const logger = Fastify({ logger: { level: "silent" } }).log;
-const skip = redisUrl ? false : "TEST_REDIS_URL belum diisi";
+const skip = redisUrl ? false : "TEST_REDIS_URL is not set";
 
 function uniquePrefix(label: string): string {
   return `idnpay:test:${label}:${process.pid}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
@@ -32,14 +32,14 @@ function job(id: string, runAt: number): ScheduledJob {
   return { runAt, job: payload };
 }
 
-describe("antrean Redis sungguhan", { skip }, () => {
-  it("terhubung ke Redis dan memilih backend Redis", async () => {
+describe("live Redis queue", { skip }, () => {
+  it("connects to Redis and picks the Redis backend", async () => {
     const queue = await createWebhookQueue(redisUrl, logger);
     assert.ok(queue instanceof RedisWebhookQueue);
     await queue.close();
   });
 
-  it("menyimpan job di sorted set dan memindahkannya ke lease saat diklaim", async () => {
+  it("stores jobs in a sorted set and moves them to a lease on claim", async () => {
     const prefix = uniquePrefix("set");
     const client = new Redis(redisUrl!, { lazyConnect: true });
     await client.connect();
@@ -64,7 +64,7 @@ describe("antrean Redis sungguhan", { skip }, () => {
     }
   });
 
-  it("job yang diklaim dua worker hanya diproses oleh satu worker", async () => {
+  it("a job claimed by two workers is processed once", async () => {
     const prefix = uniquePrefix("race");
     const first = new Redis(redisUrl!, { lazyConnect: true });
     const second = new Redis(redisUrl!, { lazyConnect: true });
@@ -87,7 +87,7 @@ describe("antrean Redis sungguhan", { skip }, () => {
     }
   });
 
-  it("job dari worker yang berhenti dipulihkan oleh worker lain setelah lease habis", async () => {
+  it("jobs from a stopped worker are recovered by another worker after the lease expires", async () => {
     const prefix = uniquePrefix("crash");
     const crashed = new Redis(redisUrl!, { lazyConnect: true });
     const survivor = new Redis(redisUrl!, { lazyConnect: true });
@@ -121,7 +121,7 @@ if (redisUrl) {
 
 function defineRedisContract(url: string): void {
   const clients: Redis[] = [];
-  describe("kontrak antrean Redis sungguhan", () => {
+  describe("live Redis queue contract", () => {
     after(async () => {
       await Promise.all(clients.map((client) => client.quit()));
     });

@@ -18,24 +18,24 @@ function matches(source: string, pattern: RegExp): string[] {
 const elementIds = new Set(matches(html, /\bid="([^"]+)"/g));
 const fieldNames = new Set(matches(html, /\bname="([^"]+)"/g));
 
-describe("konsistensi dashboard", () => {
-  it("setiap elemen yang diambil lewat getElementById ada di HTML", () => {
+describe("dashboard consistency", () => {
+  it("every getElementById target exists in the HTML", () => {
     const used = matches(script, /getElementById\("([^"]+)"\)/g);
-    assert.ok(used.length > 0, "app.js tidak mengambil elemen apa pun");
+    assert.ok(used.length > 0, "app.js does not query any element");
 
     const missing = used.filter((id) => !elementIds.has(id));
-    assert.deepEqual(missing, [], `id tidak ditemukan di index.html: ${missing.join(", ")}`);
+    assert.deepEqual(missing, [], `missing ids in index.html: ${missing.join(", ")}`);
   });
 
-  it("setiap field form yang dibaca app.js punya atribut name di HTML", () => {
+  it("every form field read by app.js has a name attribute", () => {
     const used = matches(script, /form\.get\("([^"]+)"\)/g);
-    assert.ok(used.length > 0, "app.js tidak membaca field form apa pun");
+    assert.ok(used.length > 0, "app.js reads no form field");
 
     const missing = used.filter((name) => !fieldNames.has(name));
-    assert.deepEqual(missing, [], `name tidak ditemukan di index.html: ${missing.join(", ")}`);
+    assert.deepEqual(missing, [], `missing name attributes in index.html: ${missing.join(", ")}`);
   });
 
-  it("hanya memanggil endpoint yang memang disediakan simulator", () => {
+  it("only calls endpoints the simulator provides", () => {
     const known = [
       "/v1/charge",
       "/v1/transactions",
@@ -46,26 +46,26 @@ describe("konsistensi dashboard", () => {
     const used = matches(script, /"(\/v1\/[^"]*)"/g);
 
     for (const endpoint of used) {
-      // URL dinamis seperti "/v1/simulate/" + action diperiksa di test berikutnya.
+      // Dynamic URLs like "/v1/simulate/" + action are checked in the next test.
       const path = endpoint.split("?")[0] ?? endpoint;
       const dynamic = path.endsWith("/");
       const valid = dynamic || known.includes(path);
-      assert.ok(valid, `dashboard memanggil endpoint yang tidak dikenal: ${endpoint}`);
+      assert.ok(valid, `dashboard calls an unknown endpoint: ${endpoint}`);
     }
   });
 
-  it("aksi simulasi di dashboard mengarah ke endpoint yang tersedia", () => {
+  it("dashboard action buttons point at real endpoints", () => {
     const known = new Set(["/v1/simulate/pay", "/v1/simulate/fail", "/v1/simulate/expire"]);
     const actions = matches(script, /actionButton\("[^"]+",\s*"([^"]+)"/g);
 
-    assert.ok(actions.length > 0, "tidak ada tombol aksi yang ditemukan");
+    assert.ok(actions.length > 0, "no action buttons found");
     for (const action of actions) {
-      assert.ok(known.has(`/v1/simulate/${action}`), `aksi simulasi tidak dikenal: ${action}`);
+      assert.ok(known.has(`/v1/simulate/${action}`), `unknown simulation action: ${action}`);
     }
   });
 });
 
-describe("penyajian dashboard", () => {
+describe("dashboard serving", () => {
   let app: FastifyInstance | undefined;
 
   afterEach(async () => {
@@ -73,7 +73,7 @@ describe("penyajian dashboard", () => {
     app = undefined;
   });
 
-  it("menyajikan index.html dan app.js saat DASHBOARD_ENABLED bernilai true", async () => {
+  it("serves index.html and app.js when DASHBOARD_ENABLED is true", async () => {
     app = await buildApp(makeConfig({ DASHBOARD_ENABLED: "true" }), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,
@@ -90,7 +90,7 @@ describe("penyajian dashboard", () => {
     assert.match(asset.headers["content-type"] as string, /javascript/);
   });
 
-  it("tidak menyajikan dashboard saat DASHBOARD_ENABLED bernilai false", async () => {
+  it("does not serve the dashboard when DASHBOARD_ENABLED is false", async () => {
     app = await buildApp(makeConfig({ DASHBOARD_ENABLED: "false" }), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,

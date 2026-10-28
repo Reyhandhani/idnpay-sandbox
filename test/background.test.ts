@@ -18,7 +18,7 @@ async function waitFor(condition: () => boolean, timeoutMs: number): Promise<boo
   return condition();
 }
 
-describe("proses latar belakang", () => {
+describe("background processes", () => {
   let app: FastifyInstance | undefined;
 
   afterEach(async () => {
@@ -26,7 +26,7 @@ describe("proses latar belakang", () => {
     app = undefined;
   });
 
-  it("penyapu kedaluwarsa dan worker berjalan otomatis lalu mengirim webhook EXPIRED", async () => {
+  it("the expiry sweeper and worker run on their own and send an EXPIRED webhook", async () => {
     const clock = manualClock();
     const deliveries: string[] = [];
     const fetchImpl = (async (_url: string | URL | Request, init?: RequestInit) => {
@@ -58,13 +58,13 @@ describe("proses latar belakang", () => {
     clock.advance(60 * 60 * 1000 + 1);
 
     const delivered = await waitFor(() => deliveries.length > 0, 5000);
-    assert.ok(delivered, "webhook EXPIRED tidak dikirim oleh proses latar belakang");
+    assert.ok(delivered, "the background process did not send the EXPIRED webhook");
     const body = JSON.parse(deliveries[0]!) as { transaction_status: string; order_id: string };
     assert.equal(body.transaction_status, "EXPIRED");
     assert.equal(body.order_id, "ORDER-BG-1");
   });
 
-  it("tidak menjalankan proses latar belakang jika startBackground bernilai false", async () => {
+  it("starts no background work when startBackground is false", async () => {
     const clock = manualClock();
     const deliveries: string[] = [];
     const fetchImpl = (async (_url: string | URL | Request, init?: RequestInit) => {

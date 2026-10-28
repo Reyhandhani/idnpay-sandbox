@@ -7,11 +7,11 @@ export interface TransactionStoreOptions {
 }
 
 /**
- * Penyimpanan transaksi dalam memori dengan batas kapasitas.
+ * In-memory transaction store with a size limit.
  *
- * Jika kapasitas penuh, transaksi terminal (bukan PENDING) yang paling lama dihapus.
- * Transaksi PENDING tidak pernah dihapus karena masih bisa dibayar atau kedaluwarsa.
- * Data hilang saat proses berhenti, sesuai tujuan simulator sebagai lingkungan uji.
+ * When full, the oldest finished transaction (anything but PENDING) is evicted.
+ * PENDING transactions are never evicted because they can still be paid or expire.
+ * Everything is lost when the process stops, which is fine for a test tool.
  */
 export class TransactionStore {
   private readonly byId = new Map<string, Transaction>();
@@ -38,7 +38,7 @@ export class TransactionStore {
     return [...this.byId.values()];
   }
 
-  /** Map menyimpan urutan insert, sehingga entri pertama yang terminal adalah yang paling lama. */
+  /** Map preserves insertion order, so the first finished entry is the oldest. */
   private evictOldestTerminal(): boolean {
     for (const transaction of this.byId.values()) {
       if (transaction.status !== "PENDING") {

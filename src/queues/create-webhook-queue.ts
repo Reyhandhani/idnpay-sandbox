@@ -7,15 +7,15 @@ import { describeError } from "../errors";
 const REDIS_CONNECT_TIMEOUT_MS = 2000;
 
 /**
- * Memilih backend antrean. Jika REDIS_URL tidak diisi atau Redis tidak dapat dijangkau
- * saat startup, simulator memakai antrean memori agar tetap berjalan secara offline.
+ * Picks the queue backend. If REDIS_URL is empty, or Redis cannot be reached at
+ * startup, the simulator falls back to the in-memory queue.
  */
 export async function createWebhookQueue(
   redisUrl: string | undefined,
   logger: FastifyBaseLogger,
 ): Promise<WebhookQueue> {
   if (!redisUrl) {
-    logger.info({ queue: "memory" }, "Antrean webhook memakai penyimpanan memori.");
+    logger.info({ queue: "memory" }, "Webhook queue uses in-memory storage.");
     return new MemoryWebhookQueue();
   }
 
@@ -26,19 +26,16 @@ export async function createWebhookQueue(
     retryStrategy: (attempt) => Math.min(attempt * 200, 2000),
   });
   client.on("error", (error: Error) => {
-    logger.warn({ err: error.message }, "Koneksi Redis mengalami gangguan.");
+    logger.warn({ err: error.message }, "Redis connection error.");
   });
 
   try {
     await withTimeout(client.connect(), REDIS_CONNECT_TIMEOUT_MS);
-    logger.info({ queue: "redis" }, "Antrean webhook terhubung ke Redis.");
+    logger.info({ queue: "redis" }, "Webhook queue connected to Redis.");
     return new RedisWebhookQueue(client);
   } catch (error) {
     client.disconnect();
-    logger.warn(
-      { err: describeError(error) },
-      "Redis tidak dapat dijangkau. Menggunakan antrean memori sebagai cadangan.",
-    );
+    logger.warn({ err: describeError(error) }, "Redis is unreachable. Falling back to the in-memory queue.");
     return new MemoryWebhookQueue();
   }
 }

@@ -8,8 +8,8 @@ export interface NetworkSimulation {
 }
 
 /**
- * Menambahkan latensi dan kegagalan acak pada request untuk menguji
- * ketahanan aplikasi terhadap jaringan yang tidak stabil.
+ * Adds latency and random failures to requests so you can test how your app
+ * behaves on an unstable network.
  */
 export function simulateNetwork(simulation: NetworkSimulation) {
   return async function applyNetworkSimulation(

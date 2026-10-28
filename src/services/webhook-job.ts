@@ -16,7 +16,7 @@ export interface WebhookBody {
 
 export interface BuildWebhookJobInput {
   readonly transaction: Transaction;
-  /** Status yang akan dicapai. Payload dibentuk sebelum status transaksi benar-benar diubah. */
+  /** Target status. The payload is built before the transaction actually changes. */
   readonly status: TransactionStatus;
   readonly now: number;
   readonly secretKey: string;

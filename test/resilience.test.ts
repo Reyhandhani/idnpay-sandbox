@@ -29,7 +29,7 @@ function chargePayload(orderId: string) {
   };
 }
 
-describe("ketahanan terhadap kegagalan antrean", () => {
+describe("queue failure resilience", () => {
   let app: FastifyInstance | undefined;
 
   afterEach(async () => {
@@ -37,7 +37,7 @@ describe("ketahanan terhadap kegagalan antrean", () => {
     app = undefined;
   });
 
-  it("tidak mengubah status saat webhook gagal dijadwalkan, dan aksi bisa diulang tanpa kehilangan webhook", async () => {
+  it("keeps PENDING when the webhook cannot be scheduled, and the retry still delivers it", async () => {
     const clock = manualClock();
     const queue = new ToggleableQueue();
     const deliveries: string[] = [];
@@ -92,7 +92,7 @@ describe("ketahanan terhadap kegagalan antrean", () => {
     assert.equal(JSON.parse(deliveries[0]!).transaction_status, "PAID");
   });
 
-  it("hanya satu dari dua aksi bersamaan pada transaksi yang sama yang berhasil", async () => {
+  it("only one of two concurrent actions on the same transaction succeeds", async () => {
     const clock = manualClock();
     const queue = new MemoryWebhookQueue();
     app = await buildApp(makeConfig(), { queue, clock: clock.now, startBackground: false });

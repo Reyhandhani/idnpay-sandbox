@@ -12,14 +12,14 @@ import { PaymentService } from "./services/payment-service";
 import { TransactionStore } from "./services/transaction-store";
 import { describeError } from "./errors";
 
-/** Interval pemindaian transaksi PENDING yang sudah melewati batas waktu. */
+/** How often to sweep for PENDING transactions past their expiry time. */
 const EXPIRY_SWEEP_MS = 1000;
 
 export interface BuildAppOptions {
-  /** Antrean eksternal, misalnya untuk pengujian. Jika kosong, backend dipilih dari konfigurasi. */
+  /** Queue supplied by tests. When omitted, the backend is chosen from config. */
   readonly queue?: WebhookQueue;
   readonly clock?: () => number;
-  /** Menjalankan worker webhook dan penyapu kedaluwarsa saat server siap. */
+  /** Start the webhook worker and the expiry sweeper once the server is ready. */
   readonly startBackground?: boolean;
   readonly fetchImpl?: typeof fetch;
 }
@@ -32,7 +32,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
 
   if (config.usingDefaultKeys) {
     app.log.warn(
-      "CLIENT_KEY atau SECRET_KEY memakai nilai bawaan. Ganti sebelum digunakan di lingkungan bersama.",
+      "CLIENT_KEY or SECRET_KEY still uses the default value. Change them before sharing this instance.",
     );
   }
 
@@ -86,7 +86,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
       payments
         .expireDueTransactions()
         .catch((error: unknown) => {
-          app.log.error({ err: describeError(error) }, "Gagal menandai transaksi kedaluwarsa.");
+          app.log.error({ err: describeError(error) }, "Failed to expire overdue transactions.");
         })
         .finally(() => {
           sweeping = false;
@@ -105,7 +105,7 @@ export async function buildApp(config: AppConfig, options: BuildAppOptions = {})
   return app;
 }
 
-/** Menelusuri direktori naik hingga menemukan package.json, sehingga berfungsi dari src/ maupun dist/. */
+/** Walks up to the nearest package.json so it works from both src/ and dist/. */
 function findPackageRoot(startDir: string): string {
   let current = startDir;
   while (!existsSync(path.join(current, "package.json"))) {

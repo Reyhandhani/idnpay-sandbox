@@ -40,14 +40,14 @@ export function buildPaymentDetails(input: PaymentDetailsInput, merchant: Mercha
     case "bank_transfer":
       if (!input.bank) {
         throw errors.validation(
-          `Field "bank" wajib diisi untuk payment_type bank_transfer. Pilihan: ${BANKS.join(", ")}.`,
+          `Field "bank" is required when payment_type is bank_transfer. Options: ${BANKS.join(", ")}.`,
         );
       }
       return { type: "bank_transfer", bank: input.bank, va_number: generateVirtualAccountNumber(input.bank) };
     case "ewallet":
       if (!input.ewallet) {
         throw errors.validation(
-          `Field "ewallet" wajib diisi untuk payment_type ewallet. Pilihan: ${EWALLET_PROVIDERS.join(", ")}.`,
+          `Field "ewallet" is required when payment_type is ewallet. Options: ${EWALLET_PROVIDERS.join(", ")}.`,
         );
       }
       return {

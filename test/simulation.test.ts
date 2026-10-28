@@ -13,7 +13,7 @@ const chargeBody = {
   callback_url: "http://merchant.test/webhook",
 };
 
-describe("simulasi jaringan", () => {
+describe("network simulation", () => {
   let app: FastifyInstance | undefined;
 
   afterEach(async () => {
@@ -21,7 +21,7 @@ describe("simulasi jaringan", () => {
     app = undefined;
   });
 
-  it("menggagalkan setiap request /v1 dengan 503 saat SIMULATED_FAILURE_RATE bernilai 1", async () => {
+  it("fails every /v1 request with 503 when SIMULATED_FAILURE_RATE is 1", async () => {
     const instance = await buildApp(makeConfig({ SIMULATED_FAILURE_RATE: "1" }), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,
@@ -41,7 +41,7 @@ describe("simulasi jaringan", () => {
     }
   });
 
-  it("endpoint health tetap tersedia saat kegagalan disimulasikan", async () => {
+  it("health stays available while failures are simulated", async () => {
     app = await buildApp(makeConfig({ SIMULATED_FAILURE_RATE: "1" }), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,
@@ -52,7 +52,7 @@ describe("simulasi jaringan", () => {
     assert.equal(response.statusCode, 200);
   });
 
-  it("tidak menggagalkan request saat SIMULATED_FAILURE_RATE bernilai 0", async () => {
+  it("never fails a request when SIMULATED_FAILURE_RATE is 0", async () => {
     const instance = await buildApp(makeConfig(), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,
@@ -71,7 +71,7 @@ describe("simulasi jaringan", () => {
     }
   });
 
-  it("menambahkan latensi minimal sesuai SIMULATED_LATENCY_MS", async () => {
+  it("adds at least SIMULATED_LATENCY_MS of latency", async () => {
     app = await buildApp(makeConfig({ SIMULATED_LATENCY_MS: "80" }), {
       queue: new MemoryWebhookQueue(),
       clock: manualClock().now,
@@ -83,6 +83,6 @@ describe("simulasi jaringan", () => {
     const elapsed = performance.now() - started;
 
     assert.equal(response.statusCode, 200);
-    assert.ok(elapsed >= 75, `latensi ${elapsed.toFixed(1)} ms terlalu kecil`);
+    assert.ok(elapsed >= 75, `latency of ${elapsed.toFixed(1)} ms is too low`);
   });
 });

@@ -13,12 +13,12 @@ defineQueueContract("memori", () => new MemoryWebhookQueue());
 defineQueueContract("redis mock", () => new RedisWebhookQueue(new RedisMock(), `test:${Math.random()}`));
 
 describe("createWebhookQueue", () => {
-  it("memakai antrean memori saat REDIS_URL tidak diisi", async () => {
+  it("uses the in-memory queue when REDIS_URL is empty", async () => {
     const queue = await createWebhookQueue(undefined, logger);
     assert.ok(queue instanceof MemoryWebhookQueue);
   });
 
-  it("kembali ke antrean memori jika Redis tidak dapat dijangkau", async () => {
+  it("falls back to the in-memory queue when Redis is unreachable", async () => {
     const queue = await createWebhookQueue("redis://127.0.0.1:1", logger);
     assert.ok(queue instanceof MemoryWebhookQueue);
     await queue.close();

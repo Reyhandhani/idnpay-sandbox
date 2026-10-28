@@ -29,8 +29,8 @@ export interface PaymentServiceOptions {
 }
 
 /**
- * Mengatur siklus hidup transaksi: PENDING menuju PAID, EXPIRED, atau FAILED.
- * Setiap perubahan status menghasilkan tepat satu webhook yang ditandatangani.
+ * Owns the transaction lifecycle: PENDING moves to PAID, EXPIRED, or FAILED.
+ * Every state change produces exactly one signed webhook.
  */
 export class PaymentService {
   private readonly clock: () => number;
@@ -73,7 +73,7 @@ export class PaymentService {
     this.options.store.insert(transaction);
     this.options.logger.info(
       { transaction_id: transactionId, order_id: input.order_id, payment_type: input.payment_type },
-      "Transaksi baru dibuat.",
+      "Transaction created.",
     );
     return transaction;
   }
@@ -105,7 +105,7 @@ export class PaymentService {
     return this.simulate(transactionId, "EXPIRED");
   }
 
-  /** Menandai semua transaksi PENDING yang telah melewati batas waktu sebagai EXPIRED. */
+  /** Marks every PENDING transaction past its deadline as EXPIRED. */
   async expireDueTransactions(): Promise<number> {
     let expired = 0;
     for (const transaction of this.options.store.findAll()) {
@@ -135,9 +135,9 @@ export class PaymentService {
   }
 
   /**
-   * Memindahkan transaksi ke status baru. Webhook dijadwalkan lebih dulu, baru status
-   * diubah. Jika penjadwalan gagal, status tetap PENDING sehingga aksi bisa diulang
-   * tanpa kehilangan notifikasi.
+   * Moves a transaction to a new status. The webhook is scheduled first and the status
+   * changes only after that succeeds. If scheduling fails the transaction stays PENDING,
+   * so the caller can retry without losing the notification.
    */
   private async transition(transaction: Transaction, next: TransactionStatus): Promise<void> {
     const transactionId = transaction.transaction_id;
@@ -168,7 +168,7 @@ export class PaymentService {
       }
       this.options.logger.error(
         { transaction_id: transactionId, err: describeError(error) },
-        "Gagal menjadwalkan webhook. Status transaksi tidak diubah.",
+        "Failed to schedule webhook. Transaction status left unchanged.",
       );
       throw errors.queueUnavailable();
     } finally {
@@ -177,7 +177,7 @@ export class PaymentService {
 
     this.options.logger.info(
       { transaction_id: transactionId, transaction_status: next },
-      "Status transaksi berubah, webhook dijadwalkan.",
+      "Transaction status changed, webhook scheduled.",
     );
   }
 }
@@ -187,9 +187,9 @@ function assertCallbackUrl(callbackUrl: string): void {
   try {
     parsed = new URL(callbackUrl);
   } catch {
-    throw errors.validation("callback_url harus berupa URL yang valid.");
+    throw errors.validation("callback_url must be a valid URL.");
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    throw errors.validation("callback_url harus menggunakan protokol http atau https.");
+    throw errors.validation("callback_url must use the http or https protocol.");
   }
 }

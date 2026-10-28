@@ -15,16 +15,16 @@ export interface WebhookWorkerOptions {
   readonly fetchImpl?: typeof fetch;
 }
 
-/** Waktu tambahan di atas batas timeout agar lease tidak habis saat respons sedang diproses. */
+/** Extra time on top of the timeout so the lease outlives a slow response. */
 const LEASE_MARGIN_MS = 5_000;
 
 /**
- * Mengirim webhook ke callback_url dan menjadwalkan ulang job yang gagal dengan backoff
- * eksponensial: percobaan setelah kegagalan ke-n dilakukan 2^n × 1000 ms kemudian.
- * Percobaan maksimum adalah 1 + retryLimit.
+ * Delivers webhooks to callback_url and reschedules failures with exponential backoff:
+ * after the n-th failure the next attempt runs 2^n × 1000 ms later. The maximum number
+ * of attempts is 1 + retryLimit.
  *
- * Job di-ack setelah hasilnya tercatat (berhasil, dijadwalkan ulang, atau menyerah).
- * Jika penjadwalan ulang gagal, job tidak di-ack dan akan dipulihkan setelah lease habis.
+ * A job is acked once its outcome is recorded: delivered, rescheduled, or given up.
+ * If rescheduling fails, the job is left unacked and recovered after its lease expires.
  */
 export class WebhookWorker {
   private timer: NodeJS.Timeout | undefined;
@@ -57,7 +57,7 @@ export class WebhookWorker {
     await this.inFlight;
   }
 
-  /** Memulihkan job yang lease-nya habis, lalu memproses job yang sudah jatuh tempo. */
+  /** Recovers jobs with expired leases, then processes the ones that are due. */
   tick(): Promise<void> {
     if (!this.inFlight) {
       this.inFlight = this.processBatch().finally(() => {
@@ -73,12 +73,12 @@ export class WebhookWorker {
       const now = this.clock();
       const recovered = await this.options.queue.recoverExpired(now);
       if (recovered > 0) {
-        logger.warn({ recovered }, "Job webhook dengan lease kedaluwarsa dikembalikan ke antrean.");
+        logger.warn({ recovered }, "Recovered webhook jobs whose leases had expired.");
       }
       const claimed = await this.options.queue.claimDue(now, this.batchSize, this.leaseMs);
       await Promise.allSettled(claimed.map((item) => this.deliver(item)));
     } catch (error) {
-      logger.error({ err: describeError(error) }, "Gagal mengambil job webhook dari antrean.");
+      logger.error({ err: describeError(error) }, "Failed to claim webhook jobs from the queue.");
     }
   }
 
@@ -106,7 +106,7 @@ export class WebhookWorker {
       await response.body?.cancel().catch(() => undefined);
 
       if (response.ok) {
-        log.info({ status: response.status }, "Webhook berhasil dikirim.");
+        log.info({ status: response.status }, "Webhook delivered.");
         await this.ack(lease, log);
         return;
       }
@@ -126,7 +126,7 @@ export class WebhookWorker {
   ): Promise<void> {
     const failures = job.failures + 1;
     if (failures > this.options.retryLimit) {
-      log.error({ reason, failures }, "Webhook gagal setelah batas percobaan tercapai.");
+      log.error({ reason, failures }, "Webhook failed and reached the retry limit.");
       await this.ack(lease, log);
       return;
     }
@@ -137,12 +137,12 @@ export class WebhookWorker {
     } catch (error) {
       log.error(
         { reason, err: describeError(error) },
-        "Gagal menjadwalkan ulang webhook. Job akan dipulihkan setelah lease berakhir.",
+        "Failed to reschedule webhook. The job will be recovered after its lease expires.",
       );
       return;
     }
 
-    log.warn({ reason, retry_in_ms: delayMs }, "Webhook gagal dikirim, percobaan ulang dijadwalkan.");
+    log.warn({ reason, retry_in_ms: delayMs }, "Webhook delivery failed, retry scheduled.");
     await this.ack(lease, log);
   }
 
@@ -150,7 +150,7 @@ export class WebhookWorker {
     try {
       await this.options.queue.ack(lease);
     } catch (error) {
-      log.error({ err: describeError(error) }, "Gagal mengonfirmasi job webhook.");
+      log.error({ err: describeError(error) }, "Failed to acknowledge webhook job.");
     }
   }
 }

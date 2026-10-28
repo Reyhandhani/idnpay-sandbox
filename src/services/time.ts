@@ -1,6 +1,6 @@
 import { WIB_OFFSET_MS } from "../config/constants";
 
-/** Memformat epoch milidetik ke format `YYYY-MM-DD HH:mm:ss` dalam WIB. */
+/** Formats epoch milliseconds as `YYYY-MM-DD HH:mm:ss` in WIB (UTC+7). */
 export function formatWib(epochMs: number): string {
   return new Date(epochMs + WIB_OFFSET_MS).toISOString().slice(0, 19).replace("T", " ");
 }

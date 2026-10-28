@@ -7,22 +7,22 @@ export interface ScheduledJob {
 
 export interface ClaimedJob {
   readonly job: WebhookJob;
-  /** Token untuk mengonfirmasi (ack) job. Berlaku sampai lease berakhir. */
+  /** Token used to ack the job. Valid until the lease ends. */
   readonly lease: string;
 }
 
 /**
- * Antrean webhook dengan semantik at-least-once.
+ * Webhook queue with at-least-once semantics.
  *
- * Job yang diklaim disimpan sebagai lease. Job dihapus hanya setelah worker memanggil
- * `ack`. Jika worker berhenti sebelum itu, `recoverExpired` mengembalikan job ke antrean
- * setelah lease habis.
+ * A claimed job is held as a lease. The job is removed only after the worker calls
+ * `ack`. If the worker dies first, `recoverExpired` puts the job back once its
+ * lease runs out.
  */
 export interface WebhookQueue {
   enqueue(scheduled: ScheduledJob): Promise<void>;
   claimDue(now: number, limit: number, leaseMs: number): Promise<ClaimedJob[]>;
   ack(lease: string): Promise<void>;
-  /** Mengembalikan job dengan lease kedaluwarsa ke antrean. Mengembalikan jumlah job yang dipulihkan. */
+  /** Puts jobs with expired leases back in the queue. Returns how many were recovered. */
   recoverExpired(now: number): Promise<number>;
   close(): Promise<void>;
 }

@@ -1,17 +1,17 @@
-# Dependensi dan hasil build
+# Dependencies and build output
 node_modules/
 dist/
 coverage/
 
-# Konfigurasi lokal berisi rahasia
+# Local config that holds secrets
 .env
 .env.*
 !.env.example
 
-# Paket dan hasil pack
+# Package tarballs
 *.tgz
 
-# Log dan berkas sistem
+# Logs and OS files
 *.log
 npm-debug.log*
 .DS_Store

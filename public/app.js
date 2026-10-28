@@ -50,7 +50,7 @@
       var empty = document.createElement("tr");
       var cell = document.createElement("td");
       cell.colSpan = 5;
-      cell.textContent = "Belum ada transaksi.";
+      cell.textContent = "No transactions yet.";
       empty.appendChild(cell);
       rows.appendChild(empty);
       return;
@@ -82,9 +82,9 @@
 
       var actionCell = document.createElement("td");
       if (transaction.transaction_status === "PENDING") {
-        actionCell.appendChild(actionButton("Bayar", "pay", transaction.transaction_id));
-        actionCell.appendChild(actionButton("Gagal", "fail", transaction.transaction_id));
-        actionCell.appendChild(actionButton("Kedaluwarsa", "expire", transaction.transaction_id));
+        actionCell.appendChild(actionButton("Pay", "pay", transaction.transaction_id));
+        actionCell.appendChild(actionButton("Fail", "fail", transaction.transaction_id));
+        actionCell.appendChild(actionButton("Expire", "expire", transaction.transaction_id));
       }
       row.appendChild(actionCell);
 
@@ -119,7 +119,7 @@
   }
 
   function showError(error) {
-    output.textContent = "Permintaan gagal: " + error.message;
+    output.textContent = "Request failed: " + error.message;
   }
 
   chargeForm.addEventListener("submit", function (event) {

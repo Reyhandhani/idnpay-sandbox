@@ -45,11 +45,11 @@ function readInteger(env: Env, name: string, fallback: number, min: number, max:
     return fallback;
   }
   if (!/^-?\d+$/.test(raw.trim())) {
-    throw new ConfigError(`${name} harus berupa bilangan bulat, diterima: "${raw}"`);
+    throw new ConfigError(`${name} must be an integer, got: "${raw}"`);
   }
   const value = Number(raw.trim());
   if (value < min || value > max) {
-    throw new ConfigError(`${name} harus berada di rentang ${min}..${max}, diterima: ${value}`);
+    throw new ConfigError(`${name} must be between ${min} and ${max}, got: ${value}`);
   }
   return value;
 }
@@ -61,7 +61,7 @@ function readRate(env: Env, name: string, fallback: number): number {
   }
   const value = Number(raw.trim());
   if (!Number.isFinite(value) || value < 0 || value > 1) {
-    throw new ConfigError(`${name} harus berupa angka antara 0 dan 1, diterima: "${raw}"`);
+    throw new ConfigError(`${name} must be a number between 0 and 1, got: "${raw}"`);
   }
   return value;
 }

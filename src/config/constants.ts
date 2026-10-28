@@ -16,7 +16,7 @@ export const STATUS_CODES: Readonly<Record<TransactionStatus, string>> = {
   EXPIRED: "407",
 };
 
-/** Prefix Virtual Account per bank. Nilai ini meniru pola nyata agar mudah dikenali saat pengujian. */
+/** Virtual Account prefix per bank. Mirrors the real patterns so numbers are easy to spot. */
 export const VA_PREFIXES: Readonly<Record<Bank, string>> = {
   bca: "14391",
   mandiri: "88608",
@@ -34,7 +34,7 @@ export const EWALLET_DEEPLINK_SCHEMES: Readonly<Record<EwalletProvider, string>>
   dana: "dana://pay",
 };
 
-/** Zona waktu Indonesia Barat (UTC+7). Indonesia tidak menerapkan waktu musim panas. */
+/** Western Indonesia Time (UTC+7). Indonesia has no daylight saving. */
 export const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 export const WEBHOOK_BASE_DELAY_MS = 1000;

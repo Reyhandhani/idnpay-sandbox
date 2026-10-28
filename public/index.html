@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="id">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>idnpay-sandbox · Dashboard</title>
+    <title>idnpay-sandbox · dashboard</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -133,21 +133,19 @@
   </head>
   <body>
     <h1>idnpay-sandbox</h1>
-    <p class="lead">Dashboard untuk pengujian manual. Gunakan hanya di lingkungan pengembangan.</p>
+    <p class="lead">A dashboard for manual testing. Use it in development only.</p>
 
     <section>
-      <h2>Kunci klien</h2>
+      <h2>Client key</h2>
       <label>
         X-Client-Key
         <input id="clientKey" type="password" autocomplete="off" placeholder="idnpay-dev-client-key" />
       </label>
-      <p class="hint">
-        Kunci disimpan sementara di sessionStorage browser ini dan tidak dikirim ke pihak lain.
-      </p>
+      <p class="hint">Stored in this tab's sessionStorage. It is not sent anywhere except the simulator.</p>
     </section>
 
     <section>
-      <h2>Buat transaksi</h2>
+      <h2>Create a charge</h2>
       <form id="chargeForm">
         <div class="grid">
           <label>order_id <input name="order_id" required maxlength="50" value="ORDER-1001" /></label>
@@ -187,24 +185,24 @@
           /></label>
         </div>
         <div class="actions">
-          <button type="submit">Kirim charge</button>
+          <button type="submit">Create charge</button>
         </div>
       </form>
     </section>
 
     <section>
       <div class="actions" style="margin-top: 0; justify-content: space-between; align-items: center">
-        <h2 style="margin: 0">Transaksi</h2>
-        <button id="refresh" class="secondary" type="button">Muat ulang</button>
+        <h2 style="margin: 0">Transactions</h2>
+        <button id="refresh" class="secondary" type="button">Refresh</button>
       </div>
       <table>
         <thead>
           <tr>
             <th>order_id</th>
-            <th>Metode</th>
-            <th>Jumlah</th>
+            <th>Method</th>
+            <th>Amount</th>
             <th>Status</th>
-            <th>Aksi</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -212,8 +210,8 @@
     </section>
 
     <section>
-      <h2>Respons terakhir</h2>
-      <pre id="output">Belum ada permintaan.</pre>
+      <h2>Last response</h2>
+      <pre id="output">No request yet.</pre>
     </section>
 
     <script src="/app.js"></script>

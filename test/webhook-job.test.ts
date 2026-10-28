@@ -6,10 +6,10 @@ import { makeTransaction, START_TIME } from "./helpers";
 
 describe("buildWebhookJob", () => {
   for (const status of ["PAID", "FAILED", "EXPIRED"] as TransactionStatus[]) {
-    it(`memakai status_code ${STATUS_CODES[status]} untuk status ${status}`, () => {
+    it(`maps ${status} to status_code ${STATUS_CODES[status]}`, () => {
       const transaction = makeTransaction({ order_id: "ORDER-1" });
 
-      const job = buildWebhookJob({ transaction, status, now: START_TIME, secretKey: "rahasia" });
+      const job = buildWebhookJob({ transaction, status, now: START_TIME, secretKey: "secret" });
       const body = JSON.parse(job.body) as { status_code: string; transaction_status: string };
 
       assert.equal(body.status_code, STATUS_CODES[status]);
@@ -17,7 +17,7 @@ describe("buildWebhookJob", () => {
     });
   }
 
-  it("menyertakan data transaksi apa adanya", () => {
+  it("copies transaction fields into the payload", () => {
     const transaction = makeTransaction({
       transaction_id: "trx-1",
       order_id: "ORDER-1",
@@ -25,7 +25,7 @@ describe("buildWebhookJob", () => {
       payment_type: "bank_transfer",
     });
 
-    const job = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "rahasia" });
+    const job = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "secret" });
     const body = JSON.parse(job.body) as Record<string, unknown>;
 
     assert.equal(body.transaction_id, "trx-1");
@@ -37,20 +37,20 @@ describe("buildWebhookJob", () => {
     assert.equal(job.failures, 0);
   });
 
-  it("menandatangani order_id, status_code, dan gross_amount", () => {
+  it("signs order_id, status_code, and gross_amount", () => {
     const transaction = makeTransaction({ order_id: "ORDER-9", gross_amount: 50000 });
 
-    const paid = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "rahasia" });
-    const failed = buildWebhookJob({ transaction, status: "FAILED", now: START_TIME, secretKey: "rahasia" });
+    const paid = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "secret" });
+    const failed = buildWebhookJob({ transaction, status: "FAILED", now: START_TIME, secretKey: "secret" });
 
     assert.notEqual(paid.signature, failed.signature);
   });
 
-  it("menghasilkan ID job yang berbeda untuk setiap pemanggilan", () => {
+  it("returns a new job id on every call", () => {
     const transaction = makeTransaction();
 
-    const first = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "rahasia" });
-    const second = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "rahasia" });
+    const first = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "secret" });
+    const second = buildWebhookJob({ transaction, status: "PAID", now: START_TIME, secretKey: "secret" });
 
     assert.notEqual(first.id, second.id);
   });

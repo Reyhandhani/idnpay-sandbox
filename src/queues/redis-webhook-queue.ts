@@ -5,7 +5,7 @@ import type { ClaimedJob, ScheduledJob, WebhookQueue } from "./webhook-queue";
 
 const DEFAULT_PREFIX = "idnpay:webhooks";
 
-/** Memindahkan satu member dari ZSET sumber ke ZSET tujuan, hanya jika member masih ada di sumber. */
+/** Moves one member between sorted sets, but only if it is still in the source set. */
 const MOVE_SCRIPT = `
 if redis.call('ZREM', KEYS[1], ARGV[1]) == 1 then
   redis.call('ZADD', KEYS[2], ARGV[2], ARGV[3])
@@ -14,22 +14,21 @@ end
 return 0
 `;
 
-/** Isi member di set `leased`: token unik per klaim beserta job-nya. */
+/** What a `leased` member contains: a per-claim token plus the job. */
 interface LeaseRecord {
   readonly lease: string;
   readonly job: WebhookJob;
 }
 
 /**
- * Antrean webhook berbasis Redis sorted set.
+ * Webhook queue backed by Redis sorted sets.
  *
- * - `delayed` menyimpan job terjadwal dengan skor waktu eksekusi (epoch ms).
- * - `leased` menyimpan job yang sedang diproses dengan skor batas lease. Setiap klaim
- *   mendapat token UUID sendiri, sehingga ack dari worker yang sudah kehilangan lease
- *   tidak dapat menghapus klaim milik worker lain.
+ * - `delayed` holds scheduled jobs, scored by execution time (epoch ms).
+ * - `leased` holds jobs in flight, scored by lease deadline. Each claim gets its own
+ *   UUID token, so a stale worker cannot ack a lease now owned by someone else.
  *
- * Perpindahan member antar-set dilakukan dalam satu skrip Lua, sehingga job tidak bisa
- * hilang di antara dua perintah. Worker yang kalah balapan melihat ZREM mengembalikan 0.
+ * Moving a member between sets happens inside one Lua script, so a job cannot vanish
+ * between two commands. The worker that loses the race sees ZREM return 0.
  */
 export class RedisWebhookQueue implements WebhookQueue {
   private readonly delayedKey: string;
