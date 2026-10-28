@@ -45,11 +45,12 @@
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
     "start": "node --env-file-if-exists=.env dist/src/index.js",
     "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\"",
+    "test:coverage": "tsc -p tsconfig.json && node --test --experimental-test-coverage --test-coverage-lines=90 --test-coverage-branches=85 --test-coverage-functions=85 \"dist/test/**/*.test.js\"",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
     "audit": "npm audit --omit=dev"
   },
   "dependencies": {

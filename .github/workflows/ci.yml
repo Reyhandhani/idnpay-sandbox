@@ -54,8 +54,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test
+      - name: Test (dengan gerbang cakupan)
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build

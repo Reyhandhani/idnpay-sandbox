@@ -3,7 +3,7 @@ import type { Transaction } from "../src/types";
 
 export const TEST_CLIENT_KEY = "test-client-key";
 export const TEST_SECRET_KEY = "test-secret-key";
-const START_TIME = Date.UTC(2026, 9, 28, 5, 0, 0);
+export const START_TIME = Date.UTC(2026, 9, 28, 5, 0, 0);
 
 export function makeConfig(overrides: Record<string, string> = {}): AppConfig {
   return loadConfig({
