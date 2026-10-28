@@ -41,6 +41,55 @@
       }
     </script>
 
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is it a drop-in replacement for the Midtrans sandbox?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "For charge, status, and webhook flows it covers the subset in the Midtrans guide. Snap, cards, refunds, and payouts are not implemented."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does any real money move?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Nothing connects to a bank, and the Virtual Account numbers are illustrative."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I run it in CI?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Start it as a service container in the same job and point callback_url at the service name. The workflow is in the CI guide."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "My app runs on the host. Where do webhooks go?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use host.docker.internal in callback_url. Inside a container, use the service name instead."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I test a webhook that fails?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Point callback_url at an endpoint that returns 503. The simulator retries with a delay of 2^n seconds until WEBHOOK_RETRY_LIMIT (5 by default), and every attempt is signed."
+            }
+          }
+        ]
+      }
+    </script>
+
     <style>
       :root {
         color-scheme: light;
@@ -208,6 +257,7 @@
       <a class="wordmark" href="./">idnpay-sandbox</a>
       <nav aria-label="Project">
         <a href="#quickstart">Quickstart</a>
+        <a href="#faq">FAQ</a>
         <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/API.md">API</a>
         <a href="https://github.com/Reyhandhani/idnpay-sandbox">GitHub</a>
       </nav>
@@ -322,6 +372,38 @@ docker compose up -d --build</code></pre>
           </dl>
         </section>
       </div>
+
+      <section id="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">FAQ</h2>
+        <dl>
+          <dt>Is it a drop-in replacement for the Midtrans sandbox?</dt>
+          <dd>
+            For charge, status, and webhook flows it covers the subset in the
+            <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/MIDTRANS.md"
+              >Midtrans guide</a
+            >. Snap, cards, refunds, and payouts are not implemented.
+          </dd>
+          <dt>Does any real money move?</dt>
+          <dd>No. Nothing connects to a bank, and the Virtual Account numbers are illustrative.</dd>
+          <dt>Can I run it in CI?</dt>
+          <dd>
+            Yes. Start it as a service container in the same job and point
+            <code>callback_url</code> at the service name. The workflow is in the
+            <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/CI.md">CI guide</a>.
+          </dd>
+          <dt>My app runs on the host. Where do webhooks go?</dt>
+          <dd>
+            Use <code>host.docker.internal</code> in <code>callback_url</code>. Inside a container, use the
+            service name instead.
+          </dd>
+          <dt>How do I test a webhook that fails?</dt>
+          <dd>
+            Point <code>callback_url</code> at an endpoint that returns 503. The simulator retries with a
+            delay of <code>2^n</code> seconds until <code>WEBHOOK_RETRY_LIMIT</code> (5 by default), and every
+            attempt is signed.
+          </dd>
+        </dl>
+      </section>
     </main>
 
     <footer>
