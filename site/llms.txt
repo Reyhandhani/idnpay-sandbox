@@ -4,6 +4,8 @@
 
 Base URL when running locally: http://localhost:9000
 
+Install: `npx idnpay-sandbox` on Node.js 22 or newer, or `docker compose up -d --build` from the repository.
+
 ## Main endpoints
 
 - `POST /v1/charge`: create a transaction. Body: `order_id`, `gross_amount`, `payment_type`, `callback_url`. Header: `X-Client-Key`.

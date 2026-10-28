@@ -226,13 +226,15 @@
 
       <section id="quickstart" aria-labelledby="quickstart-title">
         <h2 id="quickstart-title">Quickstart</h2>
+        <pre><code>npx idnpay-sandbox</code></pre>
+        <p>
+          Runs the published package on Node.js 22 or newer. The API listens on
+          <code>http://localhost:9000</code>, and the dashboard opens at the same address.
+        </p>
+        <p>Or run the source in Docker, which also starts Redis:</p>
         <pre><code>git clone https://github.com/Reyhandhani/idnpay-sandbox.git
 cd idnpay-sandbox
 docker compose up -d --build</code></pre>
-        <p>
-          The API listens on <code>http://localhost:9000</code>, and the dashboard opens at the same address.
-          Without Docker, the README has the Node.js steps.
-        </p>
         <p class="note">
           Default keys are <code>idnpay-dev-client-key</code> and <code>idnpay-dev-secret-key</code>. Change
           both before anyone else can reach the port.

@@ -23,27 +23,17 @@ Then add the site to Google Search Console and Bing Webmaster Tools. Submit the 
 
 ## 2. Publish to npm
 
-The name `idnpay-sandbox` was unclaimed when this was written. A package page is indexed, gets cited by answer engines, and `npx` is the shortest install path anyone can copy.
+Live at https://www.npmjs.com/package/idnpay-sandbox, version 0.1.1. The package page is indexed, gets cited by answer engines, and `npx` is the shortest install path anyone can copy.
+
+The account uses a security key, so a direct `npm publish` cannot pass the CLI OTP prompt. It goes through staged publishing instead:
 
 ```bash
-npm login
-npm publish --access public
+npm publish
 ```
 
-`prepack` builds `dist/` first. Check the result:
+That creates the placeholder `0.0.0-stage` and holds the real version. Approve it in the browser under **Staged Packages** in the profile menu, or open the package page and use its staged tab. `npm view idnpay-sandbox version` returns `0.0.0-stage` until the version is approved.
 
-```bash
-npm view idnpay-sandbox
-npx idnpay-sandbox
-```
-
-After it is live, add this to the README under "Without Docker" and to the hero of `site/index.html`:
-
-```bash
-npx idnpay-sandbox
-```
-
-Do it only after publish, so the page never points at a package that does not exist.
+For the next release: bump `version`, run `npm publish`, approve in the browser. A granular token with bypass 2FA also works, but npm removes direct publishing with those tokens in January 2027.
 
 ## 3. Write about the problem, not the repo
 

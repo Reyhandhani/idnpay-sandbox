@@ -1,6 +1,7 @@
 # idnpay-sandbox
 
 [![CI](https://github.com/Reyhandhani/idnpay-sandbox/actions/workflows/ci.yml/badge.svg)](https://github.com/Reyhandhani/idnpay-sandbox/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/idnpay-sandbox.svg)](https://www.npmjs.com/package/idnpay-sandbox)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
 [![Release](https://img.shields.io/github/v/release/Reyhandhani/idnpay-sandbox?include_prereleases&sort=semver)](https://github.com/Reyhandhani/idnpay-sandbox/releases)
@@ -76,6 +77,12 @@ docker compose up -d --build
 ```
 
 Run the same command after pulling changes, otherwise Docker keeps the old image.
+
+Or run the published package without cloning, on Node.js 22 or newer:
+
+```bash
+npx idnpay-sandbox
+```
 
 Then open `http://localhost:9000` and use the dashboard, or follow these three calls.
 
