@@ -1,18 +1,18 @@
-## Apa yang berubah
+## What changed
 
-<!-- Jelaskan perubahannya dan alasannya. -->
+<!-- What does this change, and why? -->
 
-## Jenis perubahan
+## Type of change
 
-- [ ] Perbaikan bug
-- [ ] Fitur baru
-- [ ] Mengubah API atau format webhook
-- [ ] Dokumentasi
-- [ ] Refactor, tanpa perubahan perilaku
+- [ ] Bug fix
+- [ ] New feature
+- [ ] API or webhook change
+- [ ] Documentation
+- [ ] Refactor with no behavior change
 
 ## Checklist
 
-- [ ] `npm run ci` lolos di lokal
-- [ ] Test ditambahkan atau diperbarui
-- [ ] `docs/` dan `README.md` sudah diperbarui kalau perilaku publik berubah
-- [ ] `CHANGELOG.md` sudah diperbarui
+- [ ] `npm run ci` passes locally
+- [ ] Tests added or updated
+- [ ] `docs/` and `README.md` updated when public behavior changed
+- [ ] `CHANGELOG.md` updated

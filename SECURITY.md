@@ -1,31 +1,31 @@
-# Keamanan
+# Security
 
-## Lingkup
+## Scope
 
-idnpay-sandbox adalah alat untuk development dan testing. Simulator ini tidak memproses uang sungguhan dan tidak terhubung ke bank atau penyedia e-Wallet.
+idnpay-sandbox is a development and testing tool. It never moves real money and has no connection to banks or e-Wallet providers.
 
-Meski begitu, laporan keamanan tetap penting kalau berdampak ke orang yang memakai simulator, misalnya:
+Reports still matter when they affect people running the simulator, for example:
 
-- Bypass autentikasi `X-Client-Key`
-- Pemalsuan atau lolosnya verifikasi signature webhook
-- `SECRET_KEY` atau `CLIENT_KEY` bocor lewat log, respons, atau dashboard
-- Injeksi atau eksekusi kode lewat input yang diterima simulator
-- Kerentanan di dependensi yang dipakai langsung
+- Bypassing the `X-Client-Key` check
+- Forging a webhook signature, or getting a bad signature accepted
+- Leaking `SECRET_KEY` or `CLIENT_KEY` through logs, responses, or the dashboard
+- Injection or code execution through input the simulator accepts
+- Vulnerabilities in dependencies we use directly
 
-## Cara melaporkan
+## Reporting
 
-Jangan buka issue publik untuk kerentanan. Laporkan lewat [Security Advisories](https://github.com/Reyhandhani/idnpay-sandbox/security/advisories/new) di repositori ini supaya laporannya privat.
+Do not open a public issue for a vulnerability. Report it privately through [Security Advisories](https://github.com/Reyhandhani/idnpay-sandbox/security/advisories/new).
 
-Sertakan:
+Include:
 
-- Versi atau commit yang kamu uji
-- Langkah untuk mereproduksi
-- Dampak yang kamu perkirakan
+- The version or commit you tested
+- Steps to reproduce
+- The impact you expect
 
-Ini proyek sukarela, jadi balasan bisa butuh beberapa hari. Setelah diperbaiki, kami akan mencantumkan nama pelapor di catatan rilis, kalau kamu setuju.
+This is a volunteer project, so a reply may take a few days. Once a fix is out, we will credit you in the release notes if you want the credit.
 
-## Praktik aman
+## Safe usage
 
-- Ganti `CLIENT_KEY` dan `SECRET_KEY` sebelum simulator diakses orang lain.
-- Jangan membuka port simulator ke internet tanpa lapisan autentikasi tambahan.
-- Simulator akan mengirim HTTP POST ke setiap `callback_url` yang diberikan. Jalankan di jaringan yang kamu percaya.
+- Change `CLIENT_KEY` and `SECRET_KEY` before anyone else can reach the simulator.
+- Do not expose the port to the internet without an extra authentication layer.
+- The simulator sends HTTP POST requests to any `callback_url` it receives. Run it on a network you trust.

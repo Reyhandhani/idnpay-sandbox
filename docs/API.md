@@ -1,37 +1,37 @@
 # API
 
-Semua endpoint di bawah `/v1` pakai JSON dan wajib mengirim header `X-Client-Key`. Nilainya harus sama dengan `CLIENT_KEY`.
+Every endpoint under `/v1` takes JSON and requires an `X-Client-Key` header that matches `CLIENT_KEY`.
 
-## Daftar endpoint
+## Endpoints
 
-| Method | Path                               | Keterangan                                     |
-| ------ | ---------------------------------- | ---------------------------------------------- |
-| POST   | `/v1/charge`                       | Membuat transaksi baru dengan status `PENDING` |
-| GET    | `/v1/transactions`                 | Daftar transaksi, yang terbaru di atas         |
-| GET    | `/v1/transactions/:transaction_id` | Status satu transaksi                          |
-| POST   | `/v1/simulate/pay`                 | Ubah status menjadi `PAID`                     |
-| POST   | `/v1/simulate/fail`                | Ubah status menjadi `FAILED`                   |
-| POST   | `/v1/simulate/expire`              | Ubah status menjadi `EXPIRED`                  |
-| GET    | `/health`                          | Cek hidup, tanpa autentikasi                   |
+| Method | Path                               | Description                       |
+| ------ | ---------------------------------- | --------------------------------- |
+| POST   | `/v1/charge`                       | Create a transaction in `PENDING` |
+| GET    | `/v1/transactions`                 | List transactions, newest first   |
+| GET    | `/v1/transactions/:transaction_id` | Read one transaction              |
+| POST   | `/v1/simulate/pay`                 | Move the transaction to `PAID`    |
+| POST   | `/v1/simulate/fail`                | Move the transaction to `FAILED`  |
+| POST   | `/v1/simulate/expire`              | Move the transaction to `EXPIRED` |
+| GET    | `/health`                          | Health check, no authentication   |
 
-## Format error
+## Error format
 
-Semua error punya bentuk yang sama:
+All errors share one shape:
 
 ```json
 {
   "status_code": "409",
-  "status_message": "order_id ORDER-10293 sudah pernah digunakan.",
+  "status_message": "order_id ORDER-10293 is already in use.",
   "error_code": "DUPLICATE_ORDER_ID"
 }
 ```
 
-Khusus error validasi (`VALIDATION_ERROR`), ada tambahan `details` yang menunjukkan field mana yang bermasalah:
+Validation errors (`VALIDATION_ERROR`) also include `details`, naming each field that failed:
 
 ```json
 {
   "status_code": "400",
-  "status_message": "Permintaan tidak valid. Periksa field yang ditandai.",
+  "status_message": "Request validation failed. Check the fields listed in details.",
   "error_code": "VALIDATION_ERROR",
   "details": [{ "field": "payment_type", "rule": "required" }]
 }
@@ -39,24 +39,24 @@ Khusus error validasi (`VALIDATION_ERROR`), ada tambahan `details` yang menunjuk
 
 ## POST /v1/charge
 
-Membuat transaksi baru.
+Creates a transaction.
 
 ### Body
 
-| Field          | Tipe    | Wajib                 | Aturan                                                                                                               |
-| -------------- | ------- | --------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `order_id`     | string  | ya                    | 1 sampai 50 karakter, hanya huruf, angka, `.`, `_`, dan `-`. Tidak boleh sama dengan transaksi yang masih tersimpan. |
-| `gross_amount` | integer | ya                    | Dalam rupiah, 1 sampai 100000000                                                                                     |
-| `payment_type` | string  | ya                    | `qris`, `bank_transfer`, atau `ewallet`                                                                              |
-| `callback_url` | string  | ya                    | URL `http` atau `https`, maksimal 2048 karakter                                                                      |
-| `bank`         | string  | kalau `bank_transfer` | `bca`, `mandiri`, `bri`, `bni`, atau `permata`                                                                       |
-| `ewallet`      | string  | kalau `ewallet`       | `gopay`, `ovo`, `shopeepay`, atau `dana`                                                                             |
+| Field          | Type    | Required             | Rules                                                                            |
+| -------------- | ------- | -------------------- | -------------------------------------------------------------------------------- |
+| `order_id`     | string  | yes                  | 1–50 chars, letters, digits, `.`, `_`, `-`. Must not match a stored transaction. |
+| `gross_amount` | integer | yes                  | Rupiah, 1 to 100000000                                                           |
+| `payment_type` | string  | yes                  | `qris`, `bank_transfer`, or `ewallet`                                            |
+| `callback_url` | string  | yes                  | `http` or `https` URL, up to 2048 characters                                     |
+| `bank`         | string  | with `bank_transfer` | `bca`, `mandiri`, `bri`, `bni`, or `permata`                                     |
+| `ewallet`      | string  | with `ewallet`       | `gopay`, `ovo`, `shopeepay`, or `dana`                                           |
 
-Field yang tidak ada di tabel akan ditolak dengan `400`. Ini sengaja, supaya typo di nama field tidak diam-diam diabaikan.
+Unknown fields are rejected with `400`. That is deliberate: a typo in a field name should fail loudly instead of being ignored.
 
-### Respons `201`
+### Response `201`
 
-Contoh untuk QRIS:
+QRIS example:
 
 ```json
 {
@@ -71,27 +71,25 @@ Contoh untuk QRIS:
 }
 ```
 
-Field tambahan sesuai `payment_type`:
+Extra fields by `payment_type`:
 
 - `qris`: `qr_string`
 - `bank_transfer`: `bank`, `va_number`
 - `ewallet`: `provider`, `deeplink_url`
 
-`expiry_time` memakai WIB (UTC+7) dengan format `YYYY-MM-DD HH:mm:ss`.
+`expiry_time` is Western Indonesia Time (UTC+7), formatted `YYYY-MM-DD HH:mm:ss`.
 
 ## GET /v1/transactions/:transaction_id
 
-Mengembalikan status terbaru. Kalau transaksi masih `PENDING` tapi sudah lewat `expiry_time`, statusnya langsung diubah jadi `EXPIRED` sebelum respons dikirim.
+Returns the current state. If a `PENDING` transaction is past `expiry_time`, it is marked `EXPIRED` before the response is sent.
 
-Bentuk responsnya sama dengan `POST /v1/charge`.
+The body matches `POST /v1/charge`.
 
 ## GET /v1/transactions
 
-Query parameter:
-
-| Parameter | Tipe    | Default | Aturan       |
-| --------- | ------- | ------- | ------------ |
-| `limit`   | integer | 50      | 1 sampai 200 |
+| Query   | Type    | Default | Rules    |
+| ------- | ------- | ------- | -------- |
+| `limit` | integer | 50      | 1 to 200 |
 
 ```json
 {
@@ -107,25 +105,25 @@ Query parameter:
 }
 ```
 
-`total` adalah jumlah semua transaksi yang tersimpan, bukan jumlah item di `data`.
+`total` counts every stored transaction, not just the page.
 
 ## POST /v1/simulate/pay, /fail, /expire
 
-Ketiga endpoint ini menerima body yang sama:
+All three take the same body:
 
 ```json
 { "transaction_id": "trx-6f1c2a9e-4b7d-4c2a-9f3e-2d8b1a7c5e90" }
 ```
 
-| Endpoint              | Status hasil | `status_code` |
-| --------------------- | ------------ | ------------- |
-| `/v1/simulate/pay`    | `PAID`       | `200`         |
-| `/v1/simulate/fail`   | `FAILED`     | `202`         |
-| `/v1/simulate/expire` | `EXPIRED`    | `407`         |
+| Endpoint              | Resulting state | `status_code` |
+| --------------------- | --------------- | ------------- |
+| `/v1/simulate/pay`    | `PAID`          | `200`         |
+| `/v1/simulate/fail`   | `FAILED`        | `202`         |
+| `/v1/simulate/expire` | `EXPIRED`       | `407`         |
 
-Responsnya sama dengan `GET /v1/transactions/:transaction_id`. Setiap perubahan status juga memicu satu webhook, lihat [WEBHOOK.md](WEBHOOK.md).
+Responses match `GET /v1/transactions/:transaction_id`. Each state change also schedules one webhook; see [WEBHOOK.md](WEBHOOK.md).
 
-Endpoint ini hanya bisa dipakai untuk transaksi `PENDING`. Kalau statusnya sudah final, kamu akan dapat `409 INVALID_TRANSACTION_STATE`.
+These endpoints only work on `PENDING` transactions. Once a transaction is final you get `409 INVALID_TRANSACTION_STATE`.
 
 ## GET /health
 
@@ -133,19 +131,19 @@ Endpoint ini hanya bisa dipakai untuk transaksi `PENDING`. Kalau statusnya sudah
 { "status": "ok" }
 ```
 
-## Daftar error code
+## Error codes
 
-| HTTP | `error_code`                 | Penyebab                                                                                          |
-| ---- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-| 400  | `VALIDATION_ERROR`           | Body tidak valid, ada field wajib yang kosong, atau kombinasi field salah                         |
-| 400  | `BAD_REQUEST`                | Body bukan JSON yang valid                                                                        |
-| 401  | `UNAUTHORIZED`               | `X-Client-Key` tidak ada atau salah                                                               |
-| 404  | `TRANSACTION_NOT_FOUND`      | `transaction_id` tidak ditemukan                                                                  |
-| 404  | `NOT_FOUND`                  | Path tidak ada                                                                                    |
-| 409  | `DUPLICATE_ORDER_ID`         | `order_id` masih dipakai transaksi yang tersimpan                                                 |
-| 409  | `INVALID_TRANSACTION_STATE`  | Status transaksi sudah final                                                                      |
-| 409  | `TRANSACTION_BUSY`           | Transaksi yang sama sedang diproses request lain. Coba lagi sebentar.                             |
-| 500  | `INTERNAL_ERROR`             | Error tak terduga. Cek log simulator.                                                             |
-| 503  | `QUEUE_UNAVAILABLE`          | Webhook gagal dijadwalkan, biasanya karena Redis putus. Status tidak berubah, jadi aman di-retry. |
-| 503  | `STORE_FULL`                 | Penyimpanan penuh dan tidak ada transaksi selesai yang bisa dihapus                               |
-| 503  | `SIMULATED_UPSTREAM_FAILURE` | Error acak dari `SIMULATED_FAILURE_RATE`                                                          |
+| HTTP | `error_code`                 | Cause                                                                                                       |
+| ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 400  | `VALIDATION_ERROR`           | Invalid body, missing required field, or invalid field combination                                          |
+| 400  | `BAD_REQUEST`                | Body is not valid JSON                                                                                      |
+| 401  | `UNAUTHORIZED`               | `X-Client-Key` missing or wrong                                                                             |
+| 404  | `TRANSACTION_NOT_FOUND`      | Unknown `transaction_id`                                                                                    |
+| 404  | `NOT_FOUND`                  | Unknown path                                                                                                |
+| 409  | `DUPLICATE_ORDER_ID`         | `order_id` still used by a stored transaction                                                               |
+| 409  | `INVALID_TRANSACTION_STATE`  | Transaction is already final                                                                                |
+| 409  | `TRANSACTION_BUSY`           | Another request is changing the same transaction. Retry shortly.                                            |
+| 500  | `INTERNAL_ERROR`             | Unexpected error. Check the simulator logs.                                                                 |
+| 503  | `QUEUE_UNAVAILABLE`          | The webhook could not be scheduled, usually because Redis is down. State is unchanged, so retrying is safe. |
+| 503  | `STORE_FULL`                 | Store is full and no finished transaction can be evicted                                                    |
+| 503  | `SIMULATED_UPSTREAM_FAILURE` | Random failure from `SIMULATED_FAILURE_RATE`                                                                |

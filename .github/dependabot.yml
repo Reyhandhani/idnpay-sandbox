@@ -12,7 +12,7 @@ updates:
         dependency-type: production
         update-types: [minor, patch]
     ignore:
-      # Major dari dependensi produksi diuji manual, bukan lewat PR otomatis.
+      # Major updates of production dependencies are tested by hand, not by bot PR.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
     open-pull-requests-limit: 5
@@ -30,6 +30,6 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # Node 22 adalah LTS yang dipakai proyek. Pindah major dilakukan manual.
+      # The project targets Node 22 LTS. Major moves are done by hand.
       - dependency-name: "node"
         update-types: ["version-update:semver-major"]

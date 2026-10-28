@@ -1,55 +1,55 @@
-name: Laporan bug
-description: Laporkan perilaku yang tidak sesuai dengan dokumentasi.
+name: Bug report
+description: Report behavior that does not match the documentation.
 labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        Makasih sudah melapor. Untuk kerentanan keamanan, jangan pakai formulir ini. Lihat [SECURITY.md](../../SECURITY.md).
+        Thanks for the report. For security issues, do not use this form. See [SECURITY.md](../../SECURITY.md).
   - type: textarea
     id: description
     attributes:
-      label: Deskripsi
-      description: Apa yang terjadi, dan apa yang kamu harapkan.
+      label: What happened
+      description: What you saw, and what you expected instead.
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
-      label: Langkah untuk mereproduksi
-      description: Sertakan request, konfigurasi (tanpa kunci rahasia), dan respons yang relevan.
+      label: Steps to reproduce
+      description: Include the request, your configuration (without secrets), and the relevant response.
       placeholder: |
-        1. Jalankan `docker compose up -d`
-        2. Kirim POST /v1/charge dengan body ...
-        3. Respons yang diterima ...
+        1. Run `docker compose up -d`
+        2. POST /v1/charge with ...
+        3. Response received ...
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: Versi idnpay-sandbox
-      placeholder: "0.1.0 atau commit SHA"
+      label: idnpay-sandbox version
+      placeholder: "0.1.0 or a commit SHA"
     validations:
       required: true
   - type: dropdown
     id: runtime
     attributes:
-      label: Cara menjalankan
+      label: How you run it
       options:
         - Docker Compose
-        - Node.js langsung
-        - Lainnya (jelaskan)
+        - Node.js directly
+        - Something else (explain)
     validations:
       required: true
   - type: input
     id: node
     attributes:
-      label: Versi Node.js
-      description: Hanya jika berjalan langsung dengan Node.js.
+      label: Node.js version
+      description: Only if you run it directly with Node.js.
       placeholder: "22.x"
   - type: textarea
     id: logs
     attributes:
-      label: Log
-      description: Potongan log yang relevan. Hapus informasi sensitif.
+      label: Logs
+      description: Relevant log lines. Remove anything sensitive.
       render: text

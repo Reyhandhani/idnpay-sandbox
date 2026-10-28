@@ -1,22 +1,22 @@
-# Kode etik
+# Code of Conduct
 
-Proyek ini menerima kontribusi dari siapa pun. Kami ingin partisipasi di dalamnya bebas dari pelecehan, baik dalam bentuk kata-kata, tindakan, maupun perilaku lain yang merendahkan orang lain, terlepas dari usia, disabilitas, etnis, identitas gender, tingkat pengalaman, kebangsaan, penampilan, agama, atau orientasi seksual.
+This project welcomes contributions from anyone. We want participation here to be free of harassment, whether in words, actions, or anything else that demeans other people, regardless of age, disability, ethnicity, gender identity, experience level, nationality, appearance, religion, or sexual orientation.
 
-## Perilaku yang diharapkan
+## Expected behavior
 
-- Bersikap hormat dan terbuka terhadap masukan.
-- Fokus pada apa yang terbaik bagi proyek dan komunitasnya.
-- Mengakui kontribusi orang lain dan memberi kritik secara konstruktif.
+- Be respectful and open to feedback.
+- Focus on what is best for the project and its users.
+- Credit other people's work and give criticism constructively.
 
-## Perilaku yang tidak dapat diterima
+## Unacceptable behavior
 
-- Pelecehan, ancaman, atau intimidasi.
-- Mempublikasikan informasi pribadi orang lain tanpa izin.
-- Komentar yang menghina, merendahkan, atau berisi serangan pribadi.
-- Perilaku lain yang secara wajar dianggap tidak pantas di ruang profesional.
+- Harassment, threats, or intimidation.
+- Publishing someone's private information without permission.
+- Insulting comments, put-downs, or personal attacks.
+- Any other behavior that would reasonably be considered inappropriate in a professional setting.
 
-## Penegakan
+## Enforcement
 
-Laporkan perilaku yang melanggar kode etik ini kepada pengelola proyek melalui fitur [Security Advisories](https://github.com/Reyhandhani/idnpay-sandbox/security/advisories/new) untuk laporan privat. Pengelola akan meninjau laporan dan mengambil tindakan yang sesuai, mulai dari peringatan hingga pengeluaran dari proyek.
+Report violations to the maintainer through [Security Advisories](https://github.com/Reyhandhani/idnpay-sandbox/security/advisories/new) so the report stays private. The maintainer will review the report and act as needed, from a warning to removal from the project.
 
-Kode etik ini mengadaptasi [Contributor Covenant](https://www.contributor-covenant.org/) versi 2.1.
+This code is adapted from [Contributor Covenant](https://www.contributor-covenant.org/) version 2.1.

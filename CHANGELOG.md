@@ -1,30 +1,32 @@
 # Changelog
 
-Format mengikuti [Keep a Changelog](https://keepachangelog.com/id/1.1.0/). Versi mengikuti [Semantic Versioning](https://semver.org/lang/id/).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - belum dirilis
+## [0.1.0] - unreleased
 
-Rilis pertama.
+First release.
 
-### Ditambahkan
+### Added
 
-- Charge untuk QRIS (payload EMVCo dengan CRC-16), Virtual Account per bank, dan deep-link e-Wallet
-- Status `PENDING`, `PAID`, `FAILED`, dan `EXPIRED`, dengan endpoint simulasi dan kedaluwarsa otomatis
-- Webhook yang ditandatangani HMAC-SHA256, dengan retry dan backoff eksponensial
-- Pengiriman at-least-once dengan lease. Job baru dihapus setelah worker mengonfirmasi hasilnya
-- Pemulihan otomatis untuk job yang lease-nya habis (antrean Redis)
-- Antrean memori sebagai cadangan kalau Redis tidak tersedia, dan koneksi Redis yang tersambung ulang otomatis
-- Batas penyimpanan transaksi lewat `TRANSACTION_STORE_LIMIT`
-- Simulasi latensi dan error acak
-- Dashboard di browser
-- Error code `TRANSACTION_BUSY`, `QUEUE_UNAVAILABLE`, dan `STORE_FULL`
-- ESLint, Prettier, dan CI di Node.js 22 dan 24 dengan Redis sungguhan, plus build image Docker
-- Gerbang cakupan test: minimal 90% baris dan 85% cabang serta fungsi
-- Test konsistensi dashboard dan payload webhook
-- Panduan deploy, termasuk alasan simulator tidak cocok dijalankan di serverless
-- Dokumentasi API, webhook, konfigurasi, dan arsitektur
+- Charges for QRIS (EMVCo payload with CRC-16), Virtual Accounts per bank, and e-Wallet deeplinks
+- States `PENDING`, `PAID`, `FAILED`, and `EXPIRED`, with simulation endpoints and automatic expiry
+- Webhooks signed with HMAC-SHA256, with retries and exponential backoff
+- At-least-once delivery using leases. A job is removed only after the worker records its outcome
+- Automatic recovery of jobs whose lease expired (Redis queue)
+- In-memory queue fallback when Redis is unavailable, and automatic Redis reconnection
+- Transaction store limit through `TRANSACTION_STORE_LIMIT`
+- Simulated latency and random failures
+- Browser dashboard
+- Error codes `TRANSACTION_BUSY`, `QUEUE_UNAVAILABLE`, and `STORE_FULL`
+- ESLint, Prettier, and CI on Node.js 22 and 24 with a real Redis, plus a Docker image build
+- Test coverage gate: at least 90% lines, 85% branches and functions
+- Documentation for the API, webhooks, configuration, architecture, and deployment
 
-### Keamanan
+### Security
 
-- Webhook dijadwalkan sebelum status berubah. Kalau penjadwalan gagal, status tetap `PENDING`, jadi tidak ada notifikasi yang hilang diam-diam.
-- Perbandingan `X-Client-Key` dan signature memakai `timingSafeEqual`.
+- Webhooks are scheduled before the state changes. If scheduling fails, the transaction stays `PENDING`, so no notification is lost silently.
+- `X-Client-Key` and signature comparisons use `timingSafeEqual`.
+
+### Changed
+
+- Documentation, code comments, test names, dashboard text, and messages returned to clients are written in English.

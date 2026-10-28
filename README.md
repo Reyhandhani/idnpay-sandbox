@@ -4,32 +4,32 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D22-brightgreen.svg)](package.json)
 
-Simulator payment gateway untuk lokal. Cocok kalau kamu mau mengetes integrasi QRIS, Virtual Account, atau e-Wallet tanpa sandbox pihak ketiga yang kadang down atau kena rate limit.
+A local payment gateway simulator for Indonesia. Use it to test QRIS, Virtual Account, and e-Wallet flows without a third-party sandbox that goes down or rate limits you.
 
-Simulator ini mengirim webhook yang sudah ditandatangani HMAC-SHA256, jadi kamu bisa sekalian mengetes verifikasi signature di aplikasi.
+Webhooks are signed with HMAC-SHA256, so you can test signature verification on your side too.
 
-## Fitur
+## Features
 
-- QRIS dengan payload EMVCo dan checksum CRC-16
-- Virtual Account untuk BCA, Mandiri, BRI, BNI, dan Permata
-- Deep-link e-Wallet untuk GoPay, OVO, ShopeePay, dan DANA
-- Status transaksi `PENDING`, `PAID`, `FAILED`, dan `EXPIRED`, yang bisa kamu ubah lewat endpoint simulasi
-- Webhook dengan retry dan backoff eksponensial
-- Antrean Redis (opsional). Tanpa Redis, antrean memakai memori
-- Simulasi latensi dan error acak untuk menguji ketahanan aplikasi
-- Dashboard sederhana di browser untuk mencoba alur tanpa menulis kode
+- QRIS with an EMVCo payload and CRC-16 checksum
+- Virtual Accounts for BCA, Mandiri, BRI, BNI, and Permata
+- e-Wallet deeplinks for GoPay, OVO, ShopeePay, and DANA
+- Transaction states `PENDING`, `PAID`, `FAILED`, and `EXPIRED`, driven by simulation endpoints
+- Signed webhooks with retries and exponential backoff
+- Redis queue (optional). Without Redis, the queue runs in memory
+- Simulated latency and random failures for resilience testing
+- A small browser dashboard for trying flows without writing code
 
-## Mulai cepat
+## Quick start
 
-Cara termudah pakai Docker Compose. Redis ikut jalan otomatis.
+Docker Compose is the easiest path. It starts the simulator and Redis together.
 
 ```bash
 docker compose up -d
 ```
 
-Buka `http://localhost:9000` untuk dashboard.
+Open `http://localhost:9000` for the dashboard.
 
-Kalau mau langsung pakai Node.js (butuh Node 22 atau lebih baru):
+With Node.js (version 22 or newer):
 
 ```bash
 npm ci
@@ -37,11 +37,11 @@ npm run build
 npm start
 ```
 
-Untuk development dengan auto-reload, pakai `npm run dev`. Konfigurasi bisa ditaruh di file `.env`, contohnya ada di `.env.example`.
+For development with auto-reload, run `npm run dev`. Settings can live in a `.env` file; see `.env.example`.
 
-## Contoh pemakaian
+## First request
 
-Buat transaksi QRIS:
+Create a QRIS charge:
 
 ```bash
 curl -X POST http://localhost:9000/v1/charge \
@@ -55,7 +55,7 @@ curl -X POST http://localhost:9000/v1/charge \
   }'
 ```
 
-Simulasikan pembayaran berhasil pakai `transaction_id` dari respons tadi:
+Mark it as paid using the `transaction_id` from the response:
 
 ```bash
 curl -X POST http://localhost:9000/v1/simulate/pay \
@@ -64,84 +64,84 @@ curl -X POST http://localhost:9000/v1/simulate/pay \
   -d '{ "transaction_id": "trx-..." }'
 ```
 
-Setelah itu, `callback_url` akan menerima webhook dengan `transaction_status` `PAID`.
+Your `callback_url` then receives a webhook with `transaction_status` set to `PAID`.
 
-## Menghubungkan aplikasi
+## Connecting your app
 
-Kalau simulator jalan di Docker tapi aplikasimu jalan di host, pakai `host.docker.internal` sebagai host di `callback_url`. Dari dalam container, `localhost` itu mengarah ke container sendiri, bukan ke mesin kamu.
+If the simulator runs in Docker and your app runs on the host, use `host.docker.internal` in `callback_url`. Inside a container, `localhost` points at the container itself, not your machine.
 
-| Aplikasi                       | Simulator | `callback_url`                           |
-| ------------------------------ | --------- | ---------------------------------------- |
-| Host                           | Docker    | `http://host.docker.internal:<port>/...` |
-| Host                           | Host      | `http://localhost:<port>/...`            |
-| Container di Compose yang sama | Docker    | `http://<nama-service>:<port>/...`       |
+| Your app                | Simulator | `callback_url`                           |
+| ----------------------- | --------- | ---------------------------------------- |
+| Host                    | Docker    | `http://host.docker.internal:<port>/...` |
+| Host                    | Host      | `http://localhost:<port>/...`            |
+| Container in same stack | Docker    | `http://<service-name>:<port>/...`       |
 
-## Status dan metode pembayaran
+## States and payment methods
 
-| `transaction_status` | `status_code` | Keterangan          |
+| `transaction_status` | `status_code` | Meaning             |
 | -------------------- | ------------- | ------------------- |
-| `PENDING`            | `201`         | Menunggu pembayaran |
-| `PAID`               | `200`         | Sudah dibayar       |
-| `FAILED`             | `202`         | Gagal               |
-| `EXPIRED`            | `407`         | Lewat `expiry_time` |
+| `PENDING`            | `201`         | Waiting for payment |
+| `PAID`               | `200`         | Payment received    |
+| `FAILED`             | `202`         | Payment failed      |
+| `EXPIRED`            | `407`         | Past `expiry_time`  |
 
-Status yang sudah final (`PAID`, `FAILED`, `EXPIRED`) tidak bisa berubah lagi. Setiap perubahan status mengirim tepat satu webhook.
+Final states never change again, and every state change sends exactly one webhook.
 
-| `payment_type`  | Field tambahan                                    | Field respons  |
+| `payment_type`  | Extra field                                       | Response field |
 | --------------- | ------------------------------------------------- | -------------- |
-| `qris`          | -                                                 | `qr_string`    |
+| `qris`          | –                                                 | `qr_string`    |
 | `bank_transfer` | `bank`: `bca`, `mandiri`, `bri`, `bni`, `permata` | `va_number`    |
 | `ewallet`       | `ewallet`: `gopay`, `ovo`, `shopeepay`, `dana`    | `deeplink_url` |
 
-Nomor VA memakai awalan khas tiap bank supaya gampang dikenali. Deep-link e-Wallet mengikuti skema tiap penyedia, tapi tidak terhubung ke aplikasi sungguhan.
+Virtual Account numbers start with the prefix used by each bank, so they are easy to recognize. Deeplinks follow each provider's scheme but do not open a real app.
 
-## Dokumentasi
+## Documentation
 
-- [API](docs/API.md): endpoint, format request dan respons, serta daftar error
-- [Webhook](docs/WEBHOOK.md): format, cara verifikasi signature, dan retry
-- [Konfigurasi](docs/CONFIGURATION.md): semua variabel lingkungan
-- [Arsitektur](docs/ARCHITECTURE.md): cara komponennya bekerja dan apa yang terjadi saat ada kegagalan
-- [Deploy](docs/DEPLOYMENT.md): kenapa butuh container, bukan serverless
-- [Kontribusi](CONTRIBUTING.md): cara menyiapkan lingkungan dan mengirim perubahan
-- [Kode etik](CODE_OF_CONDUCT.md)
-- [Keamanan](SECURITY.md): cara melaporkan kerentanan
+- [API](docs/API.md): endpoints, request and response formats, error codes
+- [Webhooks](docs/WEBHOOK.md): payload, signature verification, retries
+- [Configuration](docs/CONFIGURATION.md): every environment variable
+- [Architecture](docs/ARCHITECTURE.md): how the pieces fit and what happens on failure
+- [Deployment](docs/DEPLOYMENT.md): why it needs a container, not serverless
+- [Contributing](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Security](SECURITY.md)
 - [Changelog](CHANGELOG.md)
 
 ## Development
 
 ```bash
 npm ci
-npm run ci              # format, lint, typecheck, test dengan cakupan, build
-npm test                # hanya test
-npm run test:coverage   # test dengan gerbang cakupan (90% baris, 85% cabang dan fungsi)
+npm run ci              # format, lint, typecheck, tests with coverage, build
+npm test                # tests only
+npm run test:coverage   # tests with the coverage gate (90% lines, 85% branches and functions)
 ```
 
-Test integrasi Redis hanya jalan kalau `TEST_REDIS_URL` diisi:
+Redis integration tests only run when `TEST_REDIS_URL` is set:
 
 ```bash
 TEST_REDIS_URL=redis://127.0.0.1:6379 npm test
 ```
 
-Struktur folder:
+Layout:
 
 ```text
 src/
-  config/       konfigurasi dan konstanta
-  controllers/  handler request
-  plugins/      autentikasi, simulasi jaringan, penanganan error
-  queues/       antrean webhook (memori dan Redis) dan worker
-  routes/       endpoint dan skema validasi
-  services/     logika status, pembayaran, webhook, dan QRIS
-  app.ts        perakitan aplikasi
-  index.ts      titik masuk
+  config/       configuration and constants
+  controllers/  request handlers
+  plugins/      auth, network simulation, error handling
+  queues/       webhook queue (memory and Redis) and worker
+  routes/       endpoints and validation schemas
+  services/     transaction state, payment details, webhooks, QRIS
+  app.ts        application wiring
+  index.ts      process entry point
 public/         dashboard
-test/           test unit dan integrasi
+test/           unit and integration tests
 ```
 
-## Keamanan
+## Security
 
-Simulator ini untuk development dan testing, bukan untuk production. Sebelum membuka port ke jaringan lain, ganti `CLIENT_KEY` dan `SECRET_KEY`. Detailnya ada di [SECURITY.md](SECURITY.md).
+This is a development tool, not a production service. Change `CLIENT_KEY` and `SECRET_KEY` before exposing it to anyone else. See [SECURITY.md](SECURITY.md).
 
-## Lisensi
+## License
 
-MIT. Lihat [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

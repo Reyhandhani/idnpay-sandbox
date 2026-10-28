@@ -1,115 +1,115 @@
-# Arsitektur
+# Architecture
 
-Bagian ini membahas cara kerja di dalam simulator: komponennya, urutan operasi yang penting, dan apa yang terjadi saat ada yang gagal.
+This page covers the internals: the pieces, the order of operations that matter, and what happens when something fails.
 
-## Gambaran umum
+## Overview
 
 ```text
-Klien ──HTTP /v1──▶ routes → plugin → controller → service
-                                                 │
-                              PaymentService ────┼──▶ TransactionStore (memori)
-                                                 │
-                                                 └─ enqueue ─▶ WebhookQueue (memori atau Redis)
-                                                                     │
-                       penyapu kedaluwarsa (tiap 1 detik) ─▶ ...     │ claimDue / ack
-                                                                     ▼
-                                                              WebhookWorker ──POST──▶ callback_url
+client ──HTTP /v1──▶ routes → plugins → controllers → services
+                                                     │
+                                  PaymentService ────┼──▶ TransactionStore (memory)
+                                                     │
+                                                     └─ enqueue ─▶ WebhookQueue (memory or Redis)
+                                                                         │
+                        expiry sweeper (every second) ─▶ ...             │ claimDue / ack
+                                                                         ▼
+                                                                  WebhookWorker ──POST──▶ callback_url
 ```
 
-Ada dua hal yang berjalan di background: penyapu transaksi kedaluwarsa (tiap detik) dan worker webhook (tiap `WEBHOOK_TICK_MS`).
+Two things run in the background: the expiry sweeper (once a second) and the webhook worker (every `WEBHOOK_TICK_MS`).
 
-| Folder         | Isinya                                                               |
+| Folder         | Contents                                                             |
 | -------------- | -------------------------------------------------------------------- |
-| `routes/`      | Definisi endpoint dan skema validasi JSON                            |
-| `plugins/`     | Cek `X-Client-Key`, simulasi latensi dan error, penanganan error     |
-| `controllers/` | Menerjemahkan request ke pemanggilan service, lalu membentuk respons |
-| `services/`    | Aturan status, pembuatan QRIS, VA, e-Wallet, dan signature           |
-| `queues/`      | Antrean webhook dan worker pengirimnya                               |
+| `routes/`      | Endpoint definitions and JSON validation schemas                     |
+| `plugins/`     | `X-Client-Key` check, latency and failure simulation, error handling |
+| `controllers/` | Turn requests into service calls and build responses                 |
+| `services/`    | State rules, QRIS, VA, e-Wallet, and signatures                      |
+| `queues/`      | Webhook queue and its worker                                         |
 
-## Status transaksi
+## Transaction states
 
 ```text
 PENDING ──simulate/pay────▶ PAID
    ├────simulate/fail─────▶ FAILED
-   └────simulate/expire───▶ EXPIRED   (juga otomatis saat expires_at terlewat)
+   └────simulate/expire───▶ EXPIRED   (also automatic once expires_at passes)
 ```
 
-`PAID`, `FAILED`, dan `EXPIRED` adalah status final. Tidak ada jalan kembali.
+`PAID`, `FAILED`, and `EXPIRED` are final. There is no way back.
 
-### Urutan saat status berubah
+### Order of a state change
 
-Semua perubahan status lewat `PaymentService.transition` dengan urutan ini:
+Every change goes through `PaymentService.transition`:
 
-1. Cek status masih `PENDING`. Kalau tidak, balas `409 INVALID_TRANSACTION_STATE`.
-2. Tandai transaksi sedang diproses. Kalau sudah ditandai request lain, balas `409 TRANSACTION_BUSY`.
-3. Bentuk payload dan signature webhook untuk status tujuan.
-4. Masukkan webhook ke antrean.
-5. Baru ubah status di memori, lalu lepas tandanya.
+1. Check that the transaction is still `PENDING`. If not, return `409 INVALID_TRANSACTION_STATE`.
+2. Mark it as in progress. If another request holds the mark, return `409 TRANSACTION_BUSY`.
+3. Build the webhook payload and signature for the target state.
+4. Enqueue the webhook.
+5. Only then change the state in memory, and release the mark.
 
-Urutan ini punya dua manfaat:
+That order buys two things:
 
-- Kalau antrean gagal, status tetap `PENDING`. Klien bisa mencoba lagi tanpa kehilangan notifikasi.
-- Webhook tidak pernah dijadwalkan untuk status yang akhirnya tidak tercapai.
+- If the queue is unavailable, the transaction stays `PENDING`. The caller can retry without losing the notification.
+- No webhook is ever scheduled for a state that never happened.
 
-Tanda sedang diproses (langkah 2) mencegah dua request bersamaan lolos cek status lalu sama-sama mengirim webhook. Node.js berjalan satu thread, jadi blok kode yang sinkron aman. Celahnya hanya ada di `await` antrean, dan tanda itu yang menutupnya.
+The in-progress mark in step 2 stops two concurrent requests from both passing the state check and sending two webhooks. Node runs on a single thread, so synchronous blocks are safe; the only gap is the `await` on the queue, and the mark closes it.
 
-## Antrean webhook
+## Webhook queue
 
-Ada dua implementasi dengan antarmuka `WebhookQueue`:
+Two implementations share the `WebhookQueue` interface:
 
-| Backend              | Penyimpanan                                                            | Dipakai saat                                                 |
-| -------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `MemoryWebhookQueue` | Array terurut untuk yang terjadwal, Map untuk yang sedang di-lease     | `REDIS_URL` kosong, atau Redis tidak terjangkau saat startup |
-| `RedisWebhookQueue`  | Dua sorted set: `idnpay:webhooks:delayed` dan `idnpay:webhooks:leased` | `REDIS_URL` diisi dan Redis bisa dihubungi                   |
+| Backend              | Storage                                                                 | Used when                                                |
+| -------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| `MemoryWebhookQueue` | A sorted array for scheduled jobs, a map for leased ones                | `REDIS_URL` is empty, or Redis is unreachable at startup |
+| `RedisWebhookQueue`  | Two sorted sets: `idnpay:webhooks:delayed` and `idnpay:webhooks:leased` | `REDIS_URL` is set and reachable                         |
 
-### Lease
+### Leases
 
-- `enqueue` menyimpan job di `delayed`, dengan skor waktu eksekusi.
-- `claimDue` memindahkan job yang sudah waktunya ke `leased`. Skornya batas lease, dan job dapat token UUID unik.
-- `ack(token)` menghapus job dari `leased`.
-- `recoverExpired` memindahkan job dari `leased` kembali ke `delayed` kalau lease-nya sudah habis.
+- `enqueue` writes a job into `delayed`, scored by execution time.
+- `claimDue` moves due jobs into `leased`, scored by the lease deadline, and gives each claim its own UUID token.
+- `ack(token)` removes the job from `leased`.
+- `recoverExpired` moves jobs back from `leased` to `delayed` once their lease has passed.
 
-Pemindahan antar-set di Redis dilakukan lewat skrip Lua, jadi `ZREM` dan `ZADD` berjalan dalam satu langkah. Job tidak pernah berada di antara dua set. Kalau dua worker mengejar job yang sama, hanya satu yang `ZREM`-nya mengembalikan 1.
+In Redis, moving between sets happens inside one Lua script, so `ZREM` and `ZADD` run as a single step. A job is never in between sets. When two workers race for the same job, only one gets `ZREM = 1`.
 
-Token berbeda untuk setiap klaim. Karena itu, worker yang lease-nya sudah habis tidak bisa menghapus klaim worker lain dengan `ack`.
+Tokens are unique per claim, so a worker whose lease expired cannot ack a lease now held by someone else.
 
 ### Worker
 
-`WebhookWorker` jalan tiap `WEBHOOK_TICK_MS`. Setiap tick:
+`WebhookWorker` runs every `WEBHOOK_TICK_MS`. Each tick:
 
-1. Pulihkan job yang lease-nya habis.
-2. Klaim sampai 20 job yang sudah waktunya. Lease-nya `WEBHOOK_TIMEOUT_MS + 5000 ms`.
-3. Kirim semua job itu secara paralel. Hasilnya menentukan apakah job di-ack, dijadwalkan ulang, atau dibiarkan sampai lease habis.
+1. Recovers jobs with expired leases.
+2. Claims up to 20 due jobs, with a lease of `WEBHOOK_TIMEOUT_MS + 5000 ms`.
+3. Delivers them in parallel. The result decides whether each job is acked, rescheduled, or left to expire.
 
-Tick berikutnya tidak jalan kalau tick sebelumnya belum selesai.
+A new tick does not start while the previous one is still running.
 
-## Penyimpanan transaksi
+## Transaction store
 
-`TransactionStore` menyimpan transaksi di memori dengan batas `TRANSACTION_STORE_LIMIT`. Kalau sudah penuh, transaksi selesai yang paling lama dihapus, dan `order_id`-nya ikut dilepas. Transaksi `PENDING` tidak pernah dihapus.
+`TransactionStore` keeps transactions in memory, bounded by `TRANSACTION_STORE_LIMIT`. When full, the oldest finished transaction is evicted and its `order_id` is released. `PENDING` transactions are never evicted.
 
-Penyimpanan ini memang tidak persisten. Ini alat uji, bukan database.
+The store is intentionally not persistent. This is a test tool, not a database.
 
-## Penyapu kedaluwarsa
+## Expiry sweeper
 
-Tiap detik, `expireDueTransactions` mencari transaksi `PENDING` yang sudah lewat `expires_at`, lalu mengubahnya jadi `EXPIRED`. Penyapu tidak akan jalan bersamaan dengan dirinya sendiri.
+Every second, `expireDueTransactions` looks for `PENDING` transactions past `expires_at` and marks them `EXPIRED`. The sweeper never overlaps with itself.
 
-`GET /v1/transactions/:id` juga memeriksa kedaluwarsa, jadi klien tidak akan melihat status yang basi.
+`GET /v1/transactions/:id` also checks expiry, so a client never reads a stale state.
 
-## Kalau ada yang gagal
+## When things fail
 
-| Kejadian                                | Dampak                                          | Yang terjadi                                                                                                                        |
-| --------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Redis tidak bisa dihubungi saat startup | Antrean pakai memori                            | Ada peringatan di log. Aplikasi tetap jalan.                                                                                        |
-| Redis putus saat aplikasi jalan         | Pembayaran, kegagalan, dan kedaluwarsa tertunda | Aksi yang butuh antrean dibalas `503 QUEUE_UNAVAILABLE` dan status tidak berubah. Setelah Redis hidup lagi, koneksi pulih otomatis. |
-| Proses mati saat job sedang dikirim     | Job tertahan di `leased`                        | Dipulihkan setelah lease habis (hanya Redis).                                                                                       |
-| Aplikasi kamu lambat atau mati          | Pengiriman gagal                                | Retry dengan backoff. Setelah batas retry, job dibuang dan dicatat di log.                                                          |
-| Penjadwalan ulang webhook gagal         | Job belum selesai                               | Job tidak di-ack, jadi dipulihkan setelah lease habis.                                                                              |
-| Kapasitas transaksi penuh               | Charge baru ditolak                             | `503 STORE_FULL`, kalau tidak ada transaksi selesai yang bisa dihapus.                                                              |
+| Event                        | Impact                                     | Behavior                                                                                                                  |
+| ---------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Redis unreachable at startup | The queue runs in memory                   | Warning in the log. The app keeps working.                                                                                |
+| Redis drops while running    | Payments, failures, and expiry are delayed | Actions that need the queue return `503 QUEUE_UNAVAILABLE` and leave state unchanged. The connection recovers on its own. |
+| Process dies mid-delivery    | The job is stuck in `leased`               | Recovered after the lease expires (Redis only).                                                                           |
+| Your app is slow or down     | Delivery fails                             | Retries with backoff. After the limit, the job is dropped and logged.                                                     |
+| Rescheduling a webhook fails | The job is unfinished                      | It is not acked, so it is recovered after the lease expires.                                                              |
+| Store capacity reached       | New charges are rejected                   | `503 STORE_FULL`, unless a finished transaction can be evicted.                                                           |
 
-## Batasan
+## Known limits
 
-- Transaksi tidak tersimpan permanen. Restart berarti semua transaksi hilang.
-- Antrean memori juga hilang saat restart.
-- Transaksi lama yang sudah dihapus dari penyimpanan akan dibalas `404` saat di-GET.
-- Penyimpanan transaksi tidak dibagi antar instance. Beberapa instance bisa berbagi antrean Redis, tapi setiap transaksi hanya dikenal oleh instance yang membuatnya.
-- Simulator tidak memeriksa apakah `callback_url` aman. Jangan jalankan simulator di jaringan yang tidak dipercaya kalau ada yang bisa mengisi `callback_url` ke layanan internal.
+- Transactions are not persisted. A restart loses everything.
+- The in-memory queue is also lost on restart.
+- A transaction evicted from the store returns `404` on future reads.
+- Transaction storage is not shared between instances. Several instances can share one Redis queue, but each transaction is only known to the instance that created it.
+- The simulator does not validate that `callback_url` is safe. Do not run it on a network where someone could point it at internal services.

@@ -1,61 +1,61 @@
-# Konfigurasi
+# Configuration
 
-Semua konfigurasi lewat environment variable. Kalau ada nilai yang tidak valid, proses langsung berhenti saat startup dan pesan errornya menyebut nama variabelnya.
+Everything is configured through environment variables. An invalid value stops the process at startup, and the error names the variable.
 
-Contoh lengkapnya ada di [`.env.example`](../.env.example).
+A full example lives in [`.env.example`](../.env.example).
 
 ## Server
 
-| Variabel            | Default   | Keterangan                                                        |
-| ------------------- | --------- | ----------------------------------------------------------------- |
-| `HOST`              | `0.0.0.0` | Alamat yang didengarkan                                           |
-| `PORT`              | `9000`    | Port HTTP, 1 sampai 65535                                         |
-| `LOG_LEVEL`         | `info`    | `fatal`, `error`, `warn`, `info`, `debug`, `trace`, atau `silent` |
-| `DASHBOARD_ENABLED` | `true`    | Isi `false` untuk mematikan dashboard di `/`                      |
+| Variable            | Default   | Description                                                     |
+| ------------------- | --------- | --------------------------------------------------------------- |
+| `HOST`              | `0.0.0.0` | Address to bind                                                 |
+| `PORT`              | `9000`    | HTTP port, 1 to 65535                                           |
+| `LOG_LEVEL`         | `info`    | `fatal`, `error`, `warn`, `info`, `debug`, `trace`, or `silent` |
+| `DASHBOARD_ENABLED` | `true`    | Set to `false` to stop serving the dashboard at `/`             |
 
-## Autentikasi
+## Authentication
 
-| Variabel     | Default                 | Keterangan                         |
-| ------------ | ----------------------- | ---------------------------------- |
-| `CLIENT_KEY` | `idnpay-dev-client-key` | Nilai untuk header `X-Client-Key`  |
-| `SECRET_KEY` | `idnpay-dev-secret-key` | Kunci HMAC untuk signature webhook |
+| Variable     | Default                 | Description                                 |
+| ------------ | ----------------------- | ------------------------------------------- |
+| `CLIENT_KEY` | `idnpay-dev-client-key` | Value expected in the `X-Client-Key` header |
+| `SECRET_KEY` | `idnpay-dev-secret-key` | Signing key for webhooks                    |
 
-Kalau salah satunya masih pakai nilai default, simulator akan memberi peringatan saat startup. Ganti dulu sebelum simulator bisa diakses orang lain.
+If either value is still the default, the simulator logs a warning at startup. Change both before anyone else can reach it.
 
-## Transaksi
+## Transactions
 
-| Variabel                  | Default       | Keterangan                                                     |
-| ------------------------- | ------------- | -------------------------------------------------------------- |
-| `CHARGE_EXPIRY_MINUTES`   | `60`          | Masa berlaku transaksi `PENDING`, dalam menit (1 sampai 10080) |
-| `MERCHANT_NAME`           | `IDNPAY MOCK` | Nama merchant di payload QRIS. Dipotong maksimal 25 karakter.  |
-| `MERCHANT_CITY`           | `JAKARTA`     | Kota merchant di payload QRIS. Dipotong maksimal 15 karakter.  |
-| `TRANSACTION_STORE_LIMIT` | `10000`       | Jumlah transaksi maksimal di memori (10 sampai 1000000)        |
+| Variable                  | Default       | Description                                                     |
+| ------------------------- | ------------- | --------------------------------------------------------------- |
+| `CHARGE_EXPIRY_MINUTES`   | `60`          | How long a transaction stays `PENDING`, in minutes (1 to 10080) |
+| `MERCHANT_NAME`           | `IDNPAY MOCK` | Merchant name in the QRIS payload, truncated to 25 characters   |
+| `MERCHANT_CITY`           | `JAKARTA`     | Merchant city in the QRIS payload, truncated to 15 characters   |
+| `TRANSACTION_STORE_LIMIT` | `10000`       | Maximum transactions kept in memory (10 to 1000000)             |
 
-Kalau penyimpanan penuh, transaksi selesai yang paling lama akan dihapus lebih dulu. Transaksi `PENDING` tidak pernah dihapus. Kalau semua transaksi di penyimpanan masih `PENDING`, charge baru ditolak dengan `503 STORE_FULL`.
+When the store is full, the oldest finished transaction is evicted first. `PENDING` transactions are never evicted. If every stored transaction is still `PENDING`, new charges fail with `503 STORE_FULL`.
 
-## Webhook
+## Webhooks
 
-| Variabel              | Default | Keterangan                                                 |
-| --------------------- | ------- | ---------------------------------------------------------- |
-| `WEBHOOK_RETRY_LIMIT` | `5`     | Jumlah retry setelah percobaan pertama gagal (0 sampai 10) |
-| `WEBHOOK_TIMEOUT_MS`  | `5000`  | Batas waktu satu request webhook (100 sampai 60000)        |
-| `WEBHOOK_TICK_MS`     | `500`   | Seberapa sering worker mengecek antrean (10 sampai 60000)  |
+| Variable              | Default | Description                                         |
+| --------------------- | ------- | --------------------------------------------------- |
+| `WEBHOOK_RETRY_LIMIT` | `5`     | Retries after the first failed attempt (0 to 10)    |
+| `WEBHOOK_TIMEOUT_MS`  | `5000`  | Timeout for one webhook request (100 to 60000)      |
+| `WEBHOOK_TICK_MS`     | `500`   | How often the worker checks the queue (10 to 60000) |
 
-Detail perilaku pengirimannya ada di [WEBHOOK.md](WEBHOOK.md).
+See [WEBHOOK.md](WEBHOOK.md) for delivery behavior.
 
-## Antrean
+## Queue
 
-| Variabel    | Default | Keterangan                                                              |
-| ----------- | ------- | ----------------------------------------------------------------------- |
-| `REDIS_URL` | kosong  | Contohnya `redis://localhost:6379`. Kalau kosong, antrean pakai memori. |
+| Variable    | Default | Description                                                                   |
+| ----------- | ------- | ----------------------------------------------------------------------------- |
+| `REDIS_URL` | empty   | For example `redis://localhost:6379`. Leave empty to use the in-memory queue. |
 
-Kalau Redis tidak bisa dihubungi saat startup, simulator pakai antrean memori dan mencatat peringatan. Kalau Redis putus setelah simulator jalan, aksi yang perlu menjadwalkan webhook akan dibalas `503 QUEUE_UNAVAILABLE` sampai koneksi pulih.
+If Redis cannot be reached at startup, the simulator falls back to the in-memory queue and logs a warning. If Redis drops while running, actions that need to schedule a webhook return `503 QUEUE_UNAVAILABLE` until the connection recovers. Transaction state is not changed in that case.
 
-## Simulasi jaringan
+## Network simulation
 
-| Variabel                 | Default | Keterangan                                                    |
-| ------------------------ | ------- | ------------------------------------------------------------- |
-| `SIMULATED_LATENCY_MS`   | `0`     | Delay tambahan untuk setiap request ke `/v1` (0 sampai 60000) |
-| `SIMULATED_FAILURE_RATE` | `0`     | Peluang request ke `/v1` gagal dengan `503` (0 sampai 1)      |
+| Variable                 | Default | Description                                       |
+| ------------------------ | ------- | ------------------------------------------------- |
+| `SIMULATED_LATENCY_MS`   | `0`     | Extra delay on every `/v1` request (0 to 60000)   |
+| `SIMULATED_FAILURE_RATE` | `0`     | Chance an `/v1` request fails with `503` (0 to 1) |
 
-`/health` dan dashboard tidak kena simulasi ini.
+`/health` and the dashboard are not affected.

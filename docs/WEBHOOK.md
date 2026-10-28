@@ -1,16 +1,16 @@
-# Webhook
+# Webhooks
 
-Setiap kali status transaksi berubah, simulator mengirim `POST` ke `callback_url` yang kamu isi saat charge.
+Whenever a transaction changes state, the simulator sends a `POST` to the `callback_url` you set on the charge.
 
-## Kapan webhook dikirim
+## When a webhook is sent
 
-Webhook dikirim saat transaksi pindah dari `PENDING` ke salah satu status berikut:
+A webhook is scheduled when a transaction leaves `PENDING`:
 
-- `PAID`, lewat `POST /v1/simulate/pay`
-- `FAILED`, lewat `POST /v1/simulate/fail`
-- `EXPIRED`, lewat `POST /v1/simulate/expire`, atau otomatis saat `expires_at` lewat
+- `PAID`, through `POST /v1/simulate/pay`
+- `FAILED`, through `POST /v1/simulate/fail`
+- `EXPIRED`, through `POST /v1/simulate/expire`, or automatically when `expires_at` passes
 
-Transaksi yang masih `PENDING` tidak mengirim webhook.
+`PENDING` transactions do not send webhooks.
 
 ## Request
 
@@ -34,30 +34,30 @@ X-IDNPay-Timestamp: 1793124676
 }
 ```
 
-| Field                | Isi                                                |
-| -------------------- | -------------------------------------------------- |
-| `status_code`        | Kode status, lihat tabel di [README](../README.md) |
-| `transaction_id`     | ID transaksi di simulator                          |
-| `order_id`           | `order_id` yang kamu kirim saat charge             |
-| `gross_amount`       | Nominal dalam rupiah, berupa angka bulat           |
-| `payment_type`       | `qris`, `bank_transfer`, atau `ewallet`            |
-| `transaction_status` | `PAID`, `FAILED`, atau `EXPIRED`                   |
-| `transaction_time`   | Waktu perubahan status, dalam WIB                  |
+| Field                | Value                                                    |
+| -------------------- | -------------------------------------------------------- |
+| `status_code`        | Status code from the table in the [README](../README.md) |
+| `transaction_id`     | Transaction id in the simulator                          |
+| `order_id`           | `order_id` you sent with the charge                      |
+| `gross_amount`       | Amount in rupiah, as an integer                          |
+| `payment_type`       | `qris`, `bank_transfer`, or `ewallet`                    |
+| `transaction_status` | `PAID`, `FAILED`, or `EXPIRED`                           |
+| `transaction_time`   | Time of the state change, in WIB                         |
 
-`X-IDNPay-Timestamp` berisi waktu kirim dalam detik Unix. Nilainya ikut berubah setiap kali request di-retry.
+`X-IDNPay-Timestamp` is the send time in Unix seconds. It changes on every attempt, including retries.
 
-## Verifikasi signature
+## Verifying the signature
 
-Signature dibuat dengan HMAC-SHA256 pakai `SECRET_KEY` sebagai kunci. Pesannya adalah tiga nilai yang digabung tanpa pemisah:
+The signature is HMAC-SHA256 with `SECRET_KEY` as the key. The signed message is three values joined without separators:
 
 ```text
-pesan     = order_id + status_code + gross_amount
-signature = hex(HMAC-SHA256(key = SECRET_KEY, message = pesan))
+message   = order_id + status_code + gross_amount
+signature = hex(HMAC-SHA256(key = SECRET_KEY, message = message))
 ```
 
-Contoh di atas menghasilkan pesan `ORDER-10293200150000`.
+For the example above, the message is `ORDER-10293200150000`.
 
-Selalu verifikasi signature sebelum memproses webhook. Bandingkan pakai fungsi yang constant-time, jangan pakai `===`.
+Always verify the signature before processing a webhook, and compare in constant time instead of using `===`.
 
 ### Node.js
 
@@ -75,7 +75,7 @@ function isAuthentic(body, signatureHeader, secretKey) {
 
 ### PHP
 
-Contoh ini PHP biasa tanpa framework. Kalau pakai framework, ambil body dan header lewat objek request milik framework.
+Plain PHP, no framework. In a framework, read the body and header from the framework's request object instead.
 
 ```php
 <?php
@@ -93,65 +93,67 @@ if (! hash_equals($expected, $received)) {
 }
 ```
 
-### Yang tidak ditandatangani
+### What the signature does not cover
 
-Formulanya hanya mencakup `order_id`, `status_code`, dan `gross_amount`. Artinya:
+The formula covers `order_id`, `status_code`, and `gross_amount` only. That means:
 
-- `transaction_status` dan `transaction_time` tidak ikut ditandatangani. Sebelum mengubah status pesanan, cek ulang lewat `GET /v1/transactions/:transaction_id`.
-- `X-IDNPay-Timestamp` juga tidak ditandatangani. Pakai untuk logging atau pembatasan kasar saja, misalnya menolak request yang selisih waktunya jauh dari server.
+- `transaction_status` and `transaction_time` are not signed. Before changing an order, re-read the transaction with `GET /v1/transactions/:transaction_id`.
+- `X-IDNPay-Timestamp` is not signed either. Use it for logging, or for a rough rule such as rejecting requests far from your server's clock.
 
-## Respons dari aplikasi kamu
+This matches the signature scheme used by established Indonesian gateways, which also bind the status through `status_code` rather than `transaction_status`.
 
-| Respons                                      | Yang dilakukan simulator                     |
-| -------------------------------------------- | -------------------------------------------- |
-| `2xx`                                        | Dianggap berhasil. Job dihapus dari antrean. |
-| Status lain, misalnya `401`, `500`, `503`    | Dianggap gagal. Dijadwalkan ulang.           |
-| Tidak ada respons dalam `WEBHOOK_TIMEOUT_MS` | Dianggap gagal. Dijadwalkan ulang.           |
-| Koneksi ditolak atau DNS gagal               | Dianggap gagal. Dijadwalkan ulang.           |
+## What to return
 
-Isi body respons tidak dibaca. Balas secepat mungkin, lalu proses hal berat di background.
+| Your response                                 | What the simulator does                    |
+| --------------------------------------------- | ------------------------------------------ |
+| `2xx`                                         | Treats it as delivered and drops the job.  |
+| Any other status, such as `401`, `500`, `503` | Treats it as failed and schedules a retry. |
+| No response within `WEBHOOK_TIMEOUT_MS`       | Treats it as failed and schedules a retry. |
+| Connection refused or DNS failure             | Treats it as failed and schedules a retry. |
 
-## Retry
+The response body is ignored. Reply fast, then do heavy work in the background.
 
-Setelah kegagalan ke-n, percobaan berikutnya dijadwalkan 2ⁿ × 1000 ms kemudian.
+## Retries
 
-| Setelah gagal ke- | Percobaan berikutnya dalam |
-| ----------------- | -------------------------- |
-| 1                 | 2 detik                    |
-| 2                 | 4 detik                    |
-| 3                 | 8 detik                    |
-| 4                 | 16 detik                   |
-| 5                 | 32 detik                   |
+After the n-th failure, the next attempt is scheduled 2ⁿ × 1000 ms later.
 
-Total percobaan maksimal adalah `1 + WEBHOOK_RETRY_LIMIT`. Dengan default `5`, satu webhook dicoba sampai enam kali. Setelah itu simulator mencatat error dan berhenti.
+| After failure | Next attempt in |
+| ------------- | --------------- |
+| 1             | 2 seconds       |
+| 2             | 4 seconds       |
+| 3             | 8 seconds       |
+| 4             | 16 seconds      |
+| 5             | 32 seconds      |
 
-## Jaminan pengiriman
+The total number of attempts is `1 + WEBHOOK_RETRY_LIMIT`. With the default of `5`, a webhook is tried up to six times. After that the simulator logs an error and stops.
 
-Pengiriman bersifat **at-least-once**. Webhook yang sudah masuk antrean pasti dicoba sampai batas retry, tapi bisa juga diterima lebih dari sekali.
+## Delivery guarantees
 
-Cara kerjanya:
+Delivery is **at-least-once**. Every scheduled webhook is attempted until the retry limit, and your app may receive the same one more than once.
 
-1. Saat job diambil worker, job disimpan sebagai lease dengan batas waktu `WEBHOOK_TIMEOUT_MS + 5000 ms`.
-2. Job baru dihapus setelah hasilnya tercatat: berhasil, dijadwalkan ulang, atau sudah mencapai batas retry.
-3. Kalau proses simulator mati sebelum langkah 2, lease akan habis dan job dikembalikan ke antrean oleh instance yang hidup berikutnya. Ini hanya berlaku untuk Redis. Di antrean memori, job yang sedang diproses ikut hilang.
+How that works:
 
-Jadi bisa saja aplikasi kamu menerima webhook yang sama dua kali, misalnya kalau respons kamu telat melewati timeout.
+1. When a worker claims a job, the job is held as a lease for `WEBHOOK_TIMEOUT_MS + 5000 ms`.
+2. The job is removed only after its outcome is recorded: delivered, rescheduled, or given up.
+3. If the process dies before step 2, the lease expires and the next live instance puts the job back in the queue. This only works with Redis. With the in-memory queue, the job is lost.
 
-### Dedup di sisi aplikasi
+So a duplicate can arrive, for example when your response is slower than the timeout.
 
-Pakai kombinasi `transaction_id` dan `transaction_status` sebagai kunci. Kalau kunci itu sudah pernah diproses, balas `2xx` saja tanpa mengulang apa pun.
+### Deduplicate on your side
 
-## Penyimpanan antrean
+Use `transaction_id` and `transaction_status` together as the key. If that pair is already processed, return `2xx` without repeating the work.
 
-| Backend | Dipakai saat                                                     | Catatan                                                                 |
-| ------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Memori  | `REDIS_URL` kosong, atau Redis tidak bisa dihubungi saat startup | Job hilang kalau proses berhenti                                        |
-| Redis   | `REDIS_URL` diisi dan bisa dihubungi                             | Job aman selama Redis hidup. Beberapa instance bisa berbagi satu Redis. |
+## Where jobs are stored
 
-Detail implementasinya ada di [ARCHITECTURE.md](ARCHITECTURE.md).
+| Backend | Used when                                                   | Notes                                                         |
+| ------- | ----------------------------------------------------------- | ------------------------------------------------------------- |
+| Memory  | `REDIS_URL` is empty, or Redis cannot be reached at startup | Jobs are lost when the process stops                          |
+| Redis   | `REDIS_URL` is set and reachable                            | Jobs survive while Redis runs. Instances can share one Redis. |
 
-## Coba manual
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the implementation details.
 
-1. Jalankan server sederhana di port lain, misalnya `8000`.
-2. Isi `callback_url` dengan `http://host.docker.internal:8000/...` kalau simulator di Docker, atau `http://localhost:8000/...` kalau simulator jalan langsung di host.
-3. Balas non-2xx di percobaan pertama, lalu lihat retry-nya di log simulator. Setiap percobaan dicatat dengan `webhook_id` dan `attempt`.
+## Trying it by hand
+
+1. Run a simple server on another port, for example `8000`.
+2. Set `callback_url` to `http://host.docker.internal:8000/...` when the simulator runs in Docker, or `http://localhost:8000/...` when it runs on the host.
+3. Return a non-2xx status on the first attempt and watch the retry in the simulator logs. Each attempt is logged with `webhook_id` and `attempt`.

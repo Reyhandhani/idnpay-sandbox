@@ -1,12 +1,12 @@
-# Kontribusi
+# Contributing
 
-Terima kasih sudah tertarik membantu. Panduan ini menjelaskan cara menyiapkan lingkungan, menjalankan pemeriksaan, dan mengirim perubahan.
+Thanks for wanting to help. This page covers setting up, checking your work, and sending a pull request.
 
-Partisipasi di proyek ini mengikuti [Kode etik](CODE_OF_CONDUCT.md).
+Participation follows our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Menyiapkan lingkungan
+## Setup
 
-Butuh Node.js 22 atau lebih baru.
+You need Node.js 22 or newer.
 
 ```bash
 git clone https://github.com/Reyhandhani/idnpay-sandbox.git
@@ -15,38 +15,38 @@ npm ci
 npm run ci
 ```
 
-`npm run ci` menjalankan format, lint, typecheck, test, dan build. Pastikan ini lolos sebelum membuka PR.
+`npm run ci` runs formatting, lint, typecheck, tests with coverage, and the build. Make it pass before opening a pull request.
 
-Untuk test integrasi Redis, jalankan Redis lokal lalu isi `TEST_REDIS_URL`:
+For the Redis integration tests, start a local Redis and point `TEST_REDIS_URL` at it:
 
 ```bash
 docker run -d --name redis-test -p 6379:6379 redis:7-alpine
 TEST_REDIS_URL=redis://127.0.0.1:6379 npm test
 ```
 
-## Alur kerja
+## Workflow
 
-1. Untuk perubahan besar, atau yang menyentuh API atau format webhook, buka issue dulu supaya bisa didiskusikan.
-2. Buat branch dari `main`. Beri nama yang jelas, misalnya `fix/redis-reconnect`.
-3. Tulis perubahannya beserta test. Untuk bug, buat test yang gagal dulu sebelum memperbaikinya.
-4. Kalau perilaku yang terlihat dari luar berubah, update `docs/` dan `README.md`. Tambahkan juga catatan di `CHANGELOG.md`.
-5. Buka PR. Jelaskan alasannya, bukan cuma apa yang berubah.
+1. Open an issue first for larger changes, or anything that affects the API or webhook format.
+2. Branch from `main`, with a name that says what it does, for example `fix/redis-reconnect`.
+3. Write tests with the change. For a bug, write the failing test first.
+4. If public behavior changes, update `docs/` and `README.md`, and add a note to `CHANGELOG.md`.
+5. Open the pull request and explain why, not just what.
 
-## Konvensi
+## Conventions
 
-- Nama identifier dan komentar teknis pakai Bahasa Inggris. Pesan untuk klien (`status_message`), log, dan dokumentasi pakai Bahasa Indonesia.
-- Komentar hanya untuk hal yang tidak kelihatan dari kodenya sendiri, misalnya alasan urutan operasi tertentu.
-- Error pakai `AppError` dengan kode yang konsisten. Kode baru ditambahkan di `src/errors.ts` dan dicatat di `docs/API.md`.
-- Variabel environment baru harus masuk ke `src/config/env.ts`, diuji di `test/config.test.ts`, dan dicatat di `docs/CONFIGURATION.md` serta `.env.example`.
-- Jangan pakai library kriptografi pihak ketiga. Cukup modul `crypto` bawaan Node.js.
+- Everything in the repository is in English: code, comments, tests, messages returned to clients, and documentation. Keep sentences short.
+- Write a comment only when the code cannot explain itself, such as why one operation must happen before another.
+- Errors use `AppError` with a stable code. Add new codes in `src/errors.ts` and list them in `docs/API.md`.
+- A new environment variable needs an entry in `src/config/env.ts`, a test in `test/config.test.ts`, and docs in `docs/CONFIGURATION.md` plus `.env.example`.
+- Do not add a third-party crypto library. Use Node's `crypto` module.
 
-## Test
+## Tests
 
-- Setiap perubahan perilaku perlu test.
-- `npm run test:coverage` dipakai di CI dan akan gagal kalau cakupan turun di bawah 90% baris atau 85% cabang dan fungsi.
-- Test ada di `test/`. Helper bersama ada di `test/helpers.ts` dan `test/support/`.
-- Untuk logika yang bergantung waktu, pakai `manualClock` dari `test/helpers.ts`. Hindari `setTimeout` yang panjang di test.
+- Every behavior change needs a test.
+- Tests live in `test/`. Shared helpers are in `test/helpers.ts` and `test/support/`.
+- Use `manualClock` from `test/helpers.ts` for time-dependent logic. Avoid long `setTimeout` calls in tests.
+- `npm run test:coverage` runs in CI and fails below 90% lines or 85% branches and functions.
 
-## Pull request
+## Pull requests
 
-CI akan menjalankan semua pemeriksaan di Node.js 22 dan 24, dengan Redis sungguhan, dan membangun image Docker. Tunggu sampai semuanya hijau sebelum minta review.
+CI runs on Node.js 22 and 24, with a real Redis, and builds the Docker image. Wait for it to go green before asking for review.
