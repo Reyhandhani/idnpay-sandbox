@@ -1,0 +1,33 @@
+# idnpay-sandbox
+
+> Open-source local payment gateway simulator for Indonesia. It exposes HTTP endpoints that create QRIS, Virtual Account (BCA, Mandiri, BRI, BNI, Permata), and e-Wallet (GoPay, OVO, ShopeePay, DANA) charges, changes transaction state on demand, and delivers HMAC-SHA256 signed webhooks with exponential backoff retries. Runs offline in Docker or with Node.js 22 or newer. It is a development tool, not a payment processor: no money moves and the Virtual Account prefixes are illustrative.
+
+Base URL when running locally: http://localhost:9000
+
+## Main endpoints
+
+- `POST /v1/charge`: create a transaction. Body: `order_id`, `gross_amount`, `payment_type`, `callback_url`. Header: `X-Client-Key`.
+- `POST /v1/simulate/pay`: mark a transaction paid. Body: `transaction_id`.
+- `POST /v1/simulate/fail` and `POST /v1/simulate/expire`: the other terminal states.
+- `GET /v1/transactions/:transaction_id`: current state.
+- `POST /v2/charge`: Midtrans-compatible subset, Basic auth with `SECRET_KEY` as username.
+
+## Webhook signature
+
+`X-IDNPay-Signature` = HMAC-SHA256 of `order_id + status_code + gross_amount` keyed with `SECRET_KEY`, hex encoded. `X-IDNPay-Timestamp` carries the Unix timestamp. Midtrans-compatible webhooks use `signature_key` with SHA512 instead.
+
+## Documentation
+
+- [README](https://github.com/Reyhandhani/idnpay-sandbox#readme): setup, request examples, states, FAQ
+- [API reference](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/API.md)
+- [Webhooks](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/WEBHOOK.md)
+- [Midtrans compatibility](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/MIDTRANS.md)
+- [Configuration](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/CONFIGURATION.md)
+- [Architecture](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/ARCHITECTURE.md)
+- [Continuous integration](https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/CI.md)
+
+## Source
+
+- [Repository](https://github.com/Reyhandhani/idnpay-sandbox)
+- [Issues](https://github.com/Reyhandhani/idnpay-sandbox/issues)
+- License: MIT

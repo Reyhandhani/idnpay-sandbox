@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>idnpay-sandbox | Local payment gateway simulator for Indonesia</title>
+    <meta
+      name="description"
+      content="Run QRIS, Virtual Account, and e-Wallet payments on localhost. Open-source simulator for Indonesian payment rails with HMAC-signed webhook retries."
+    />
+    <link rel="canonical" href="https://reyhandhani.github.io/idnpay-sandbox/" />
+    <meta name="theme-color" content="#f4f4f0" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://reyhandhani.github.io/idnpay-sandbox/" />
+    <meta property="og:title" content="idnpay-sandbox | Local payment gateway simulator for Indonesia" />
+    <meta
+      property="og:description"
+      content="QRIS, Virtual Account, and e-Wallet charges on localhost, with HMAC-SHA256 signed webhooks and retry testing. Runs offline."
+    />
+    <meta
+      property="og:image"
+      content="https://reyhandhani.github.io/idnpay-sandbox/assets/social-preview.png"
+    />
+    <meta property="og:image:alt" content="idnpay-sandbox" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "idnpay-sandbox",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Docker, Linux, macOS, Windows",
+        "description": "Open-source local payment gateway simulator for Indonesia. Simulates QRIS, Virtual Account, and e-Wallet charges and sends HMAC-SHA256 signed webhooks with exponential backoff retries.",
+        "url": "https://reyhandhani.github.io/idnpay-sandbox/",
+        "codeRepository": "https://github.com/Reyhandhani/idnpay-sandbox",
+        "license": "https://github.com/Reyhandhani/idnpay-sandbox/blob/main/LICENSE",
+        "programmingLanguage": "TypeScript",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
+
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f4f4f0;
+        --ink: #111110;
+        --muted: #5f5f58;
+        --rule: #d6d6cf;
+        --control: #7a7a72;
+        --accent: #14663f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0 auto;
+        max-width: 880px;
+        padding: 32px 24px 72px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--accent);
+        text-underline-offset: 2px;
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px 24px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--ink);
+      }
+      .wordmark {
+        color: var(--ink);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 18px;
+      }
+      h1 {
+        margin: 48px 0 16px;
+        font-size: 34px;
+        line-height: 1.15;
+        letter-spacing: -0.01em;
+        max-width: 22ch;
+      }
+      .lede {
+        margin: 0 0 12px;
+        max-width: 62ch;
+        font-size: 18px;
+      }
+      p {
+        margin: 0 0 12px;
+        max-width: 68ch;
+      }
+      section {
+        margin-top: 44px;
+      }
+      h2 {
+        margin: 0 0 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ink);
+        font-size: 15px;
+        font-weight: 600;
+      }
+      h3 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      pre {
+        margin: 0 0 12px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        background: #ffffff;
+        border: 1px solid var(--rule);
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      code {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: 0.92em;
+      }
+      table {
+        width: 100%;
+        margin-bottom: 12px;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 8px 12px 8px 0;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--rule);
+      }
+      th {
+        font-weight: 600;
+        color: var(--muted);
+      }
+      .split {
+        display: grid;
+        gap: 28px;
+        grid-template-columns: 1fr;
+      }
+      .note {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      dl {
+        margin: 0;
+        max-width: 68ch;
+      }
+      dt {
+        margin-top: 14px;
+        font-weight: 600;
+      }
+      dd {
+        margin: 2px 0 0;
+        color: var(--muted);
+      }
+      footer {
+        margin-top: 56px;
+        padding-top: 12px;
+        border-top: 1px solid var(--ink);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px 24px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      footer nav {
+        gap: 4px 16px;
+      }
+      @media (min-width: 760px) {
+        body {
+          padding: 40px 32px 96px;
+        }
+        h1 {
+          font-size: 44px;
+        }
+        .split {
+          grid-template-columns: 3fr 2fr;
+          gap: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="wordmark" href="./">idnpay-sandbox</a>
+      <nav aria-label="Project">
+        <a href="#quickstart">Quickstart</a>
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/API.md">API</a>
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox">GitHub</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Indonesian payment rails, running on your machine.</h1>
+      <p class="lede">
+        idnpay-sandbox simulates QRIS, Virtual Account, and e-Wallet payments on localhost, so your
+        integration tests stop depending on a provider sandbox you cannot control.
+      </p>
+      <p>
+        Webhooks carry an HMAC-SHA256 signature and retry with exponential backoff. Failures you need to test,
+        from a 503 to a body with the wrong signature, you trigger on purpose.
+      </p>
+
+      <section id="quickstart" aria-labelledby="quickstart-title">
+        <h2 id="quickstart-title">Quickstart</h2>
+        <pre><code>git clone https://github.com/Reyhandhani/idnpay-sandbox.git
+cd idnpay-sandbox
+docker compose up -d --build</code></pre>
+        <p>
+          The API listens on <code>http://localhost:9000</code>, and the dashboard opens at the same address.
+          Without Docker, the README has the Node.js steps.
+        </p>
+        <p class="note">
+          Default keys are <code>idnpay-dev-client-key</code> and <code>idnpay-dev-secret-key</code>. Change
+          both before anyone else can reach the port.
+        </p>
+      </section>
+
+      <section id="coverage" aria-labelledby="coverage-title">
+        <h2 id="coverage-title">What it covers</h2>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">payment_type</th>
+              <th scope="col">Options</th>
+              <th scope="col">Returned to you</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>qris</code></td>
+              <td>Dynamic QRIS string with EMVCo payload and CRC-16</td>
+              <td><code>qr_string</code></td>
+            </tr>
+            <tr>
+              <td><code>bank_transfer</code></td>
+              <td>BCA, Mandiri, BRI, BNI, Permata</td>
+              <td><code>va_number</code></td>
+            </tr>
+            <tr>
+              <td><code>ewallet</code></td>
+              <td>GoPay, OVO, ShopeePay, DANA</td>
+              <td><code>deeplink_url</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          Virtual Account prefixes are illustrative, not official bank numbers. Deeplinks follow each provider
+          scheme and do not open a real app.
+        </p>
+      </section>
+
+      <div class="split">
+        <section id="why" aria-labelledby="why-title">
+          <h2 id="why-title">Why run it locally</h2>
+          <dl>
+            <dt>Your CI stops being flaky</dt>
+            <dd>
+              The simulator runs as a container in the same job and answers in milliseconds. No rate limit, no
+              maintenance window, no network hop to someone else's sandbox.
+            </dd>
+            <dt>You can reproduce the failure</dt>
+            <dd>
+              Set a failure status, or point the callback at an endpoint that returns 503 and watch the retry
+              queue work through it.
+            </dd>
+            <dt>Webhooks do not need a public URL</dt>
+            <dd>
+              Both containers share a Docker network, so <code>callback_url</code> uses a service name. No
+              tunnel, no exposed laptop.
+            </dd>
+            <dt>It speaks a Midtrans subset</dt>
+            <dd>
+              <code>POST /v2/charge</code>, the status endpoint, and <code>signature_key</code>
+              work as Midtrans documents them. Snap, cards, refunds, and payouts are not implemented.
+            </dd>
+          </dl>
+        </section>
+
+        <section id="docs" aria-labelledby="docs-title">
+          <h2 id="docs-title">Documentation</h2>
+          <dl>
+            <dt><a href="https://github.com/Reyhandhani/idnpay-sandbox#readme">README</a></dt>
+            <dd>Setup, request examples, transaction states.</dd>
+            <dt>
+              <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/API.md">API</a>
+            </dt>
+            <dd>Endpoints, payloads, error codes.</dd>
+            <dt>
+              <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/WEBHOOK.md">Webhooks</a>
+            </dt>
+            <dd>Signature verification and retry schedule.</dd>
+            <dt>
+              <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/CI.md">CI</a>
+            </dt>
+            <dd>Running it inside GitHub Actions.</dd>
+          </dl>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <span>MIT licensed. Built for testing, not for production payments.</span>
+      <nav aria-label="Elsewhere">
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox">Source</a>
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox/issues">Issues</a>
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/SECURITY.md">Security</a>
+      </nav>
+    </footer>
+  </body>
+</html>
