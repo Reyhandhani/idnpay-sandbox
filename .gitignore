@@ -11,9 +11,13 @@ coverage/
 # Package tarballs
 *.tgz
 
+# Local agent notes, not part of the project
+agents.md
+
 # Logs and OS files
 *.log
 npm-debug.log*
+.eslintcache
 .DS_Store
 Thumbs.db
 
