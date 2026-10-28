@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "description": "Open-source local payment gateway simulator for Indonesia (QRIS, Virtual Account, e-Wallet) with HMAC-signed webhooks.",
   "license": "MIT",
-  "homepage": "https://github.com/Reyhandhani/idnpay-sandbox#readme",
+  "homepage": "https://reyhandhani.github.io/idnpay-sandbox/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Reyhandhani/idnpay-sandbox.git"
@@ -19,8 +19,12 @@
     "virtual account",
     "e-wallet",
     "webhook",
+    "webhook-testing",
     "midtrans",
-    "sandbox"
+    "mock-api",
+    "payment-simulator",
+    "sandbox",
+    "local-development"
   ],
   "type": "commonjs",
   "main": "dist/src/index.js",
@@ -31,6 +35,7 @@
     "dist/src",
     "public",
     "docs",
+    "!docs/DISTRIBUTION.md",
     "README.md",
     "CHANGELOG.md",
     "LICENSE",
