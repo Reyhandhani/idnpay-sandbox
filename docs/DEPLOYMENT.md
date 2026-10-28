@@ -2,7 +2,7 @@
 
 The simulator needs a process that keeps running, not serverless. That is the whole answer, and the rest of this page explains why and what to use instead.
 
-If you only need it on your laptop, `docker compose up -d` is enough and you can skip this page.
+If you only need it on your laptop, `docker compose up -d --build` is enough and you can skip this page.
 
 ## Why not serverless (Vercel, Netlify Functions, and friends)
 

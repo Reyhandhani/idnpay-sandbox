@@ -22,11 +22,13 @@ Webhooks are signed with HMAC-SHA256, so you can test signature verification on 
 
 ## Quick start
 
-Docker Compose is the easiest path. It starts the simulator and Redis together.
+Docker Compose is the easiest path. It builds the image and starts the simulator with Redis.
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
+
+Run the same command after pulling changes, otherwise Docker keeps the old image.
 
 Open `http://localhost:9000` for the dashboard.
 
