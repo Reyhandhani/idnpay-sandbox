@@ -16,7 +16,7 @@ export const STATUS_CODES: Readonly<Record<TransactionStatus, string>> = {
   EXPIRED: "407",
 };
 
-/** Virtual Account prefix per bank. Mirrors the real patterns so numbers are easy to spot. */
+/** Distinct prefix per bank, so a VA number is easy to spot in logs. Illustrative, not official. */
 export const VA_PREFIXES: Readonly<Record<Bank, string>> = {
   bca: "14391",
   mandiri: "88608",

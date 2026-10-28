@@ -53,9 +53,10 @@ If Redis cannot be reached at startup, the simulator falls back to the in-memory
 
 ## Network simulation
 
-| Variable                 | Default | Description                                       |
-| ------------------------ | ------- | ------------------------------------------------- |
-| `SIMULATED_LATENCY_MS`   | `0`     | Extra delay on every `/v1` request (0 to 60000)   |
-| `SIMULATED_FAILURE_RATE` | `0`     | Chance an `/v1` request fails with `503` (0 to 1) |
+| Variable                   | Default | Description                                         |
+| -------------------------- | ------- | --------------------------------------------------- |
+| `SIMULATED_LATENCY_MS`     | `0`     | Extra delay on every `/v1` request (0 to 60000)     |
+| `SIMULATED_FAILURE_RATE`   | `0`     | Chance an `/v1` request fails (0 to 1)              |
+| `SIMULATED_FAILURE_STATUS` | `503`   | Status returned by a simulated failure (400 to 599) |
 
 `/health` and the dashboard are not affected.

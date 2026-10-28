@@ -41,6 +41,22 @@ describe("network simulation", () => {
     }
   });
 
+  it("returns the configured status for a simulated failure", async () => {
+    const instance = await buildApp(
+      makeConfig({ SIMULATED_FAILURE_RATE: "1", SIMULATED_FAILURE_STATUS: "504" }),
+      {
+        queue: new MemoryWebhookQueue(),
+        clock: manualClock().now,
+        startBackground: false,
+      },
+    );
+    app = instance;
+
+    const response = await instance.inject({ method: "GET", url: "/v1/transactions", headers });
+    assert.equal(response.statusCode, 504);
+    assert.equal(response.json().error_code, "SIMULATED_UPSTREAM_FAILURE");
+  });
+
   it("health stays available while failures are simulated", async () => {
     app = await buildApp(makeConfig({ SIMULATED_FAILURE_RATE: "1" }), {
       queue: new MemoryWebhookQueue(),

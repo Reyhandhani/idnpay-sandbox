@@ -7,8 +7,7 @@ import { describeError } from "../errors";
 const REDIS_CONNECT_TIMEOUT_MS = 2000;
 
 /**
- * Picks the queue backend. If REDIS_URL is empty, or Redis cannot be reached at
- * startup, the simulator falls back to the in-memory queue.
+ * Uses Redis when it is configured and reachable at startup, otherwise memory.
  */
 export async function createWebhookQueue(
   redisUrl: string | undefined,

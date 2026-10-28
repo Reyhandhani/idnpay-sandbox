@@ -7,7 +7,8 @@ export function createChargeController(payments: PaymentService) {
     request: FastifyRequest<{ Body: CreateChargeInput }>,
     reply: FastifyReply,
   ) {
-    const transaction = await payments.createCharge(request.body);
+    const key = request.headers["idempotency-key"];
+    const transaction = await payments.createCharge(request.body, typeof key === "string" ? key : undefined);
     return reply.code(201).send(toTransactionView(transaction));
   };
 }

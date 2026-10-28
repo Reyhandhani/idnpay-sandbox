@@ -19,12 +19,8 @@ export interface WebhookWorkerOptions {
 const LEASE_MARGIN_MS = 5_000;
 
 /**
- * Delivers webhooks to callback_url and reschedules failures with exponential backoff:
- * after the n-th failure the next attempt runs 2^n × 1000 ms later. The maximum number
- * of attempts is 1 + retryLimit.
- *
- * A job is acked once its outcome is recorded: delivered, rescheduled, or given up.
- * If rescheduling fails, the job is left unacked and recovered after its lease expires.
+ * Retries deliveries at 2^n × 1000 ms, up to 1 + retryLimit attempts. A job is acked
+ * only after its outcome is recorded, so a failed reschedule is recovered by lease expiry.
  */
 export class WebhookWorker {
   private timer: NodeJS.Timeout | undefined;
@@ -90,16 +86,20 @@ export class WebhookWorker {
       attempt,
     });
 
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      "user-agent": "idnpay-sandbox/0.1",
+      [TIMESTAMP_HEADER]: Math.floor(this.clock() / 1000).toString(),
+    };
+    if (job.signature) {
+      headers[SIGNATURE_HEADER] = job.signature;
+    }
+
     let reason: string;
     try {
       const response = await this.fetchImpl(job.callback_url, {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "user-agent": "idnpay-sandbox/0.1",
-          [SIGNATURE_HEADER]: job.signature,
-          [TIMESTAMP_HEADER]: Math.floor(this.clock() / 1000).toString(),
-        },
+        headers,
         body: job.body,
         signal: AbortSignal.timeout(this.options.timeoutMs),
       });

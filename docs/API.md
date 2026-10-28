@@ -1,6 +1,6 @@
 # API
 
-Every endpoint under `/v1` takes JSON and requires an `X-Client-Key` header that matches `CLIENT_KEY`.
+Every endpoint under `/v1` takes JSON and requires an `X-Client-Key` header that matches `CLIENT_KEY`. The `/v2` endpoints mirror Midtrans and use Basic auth; see [MIDTRANS.md](MIDTRANS.md).
 
 ## Endpoints
 
@@ -12,6 +12,8 @@ Every endpoint under `/v1` takes JSON and requires an `X-Client-Key` header that
 | POST   | `/v1/simulate/pay`                 | Move the transaction to `PAID`    |
 | POST   | `/v1/simulate/fail`                | Move the transaction to `FAILED`  |
 | POST   | `/v1/simulate/expire`              | Move the transaction to `EXPIRED` |
+| POST   | `/v2/charge`                       | Midtrans-compatible charge        |
+| GET    | `/v2/{order_id}/status`            | Midtrans-compatible status        |
 | GET    | `/health`                          | Health check, no authentication   |
 
 ## Error format
@@ -79,6 +81,8 @@ Extra fields by `payment_type`:
 
 `expiry_time` is Western Indonesia Time (UTC+7), formatted `YYYY-MM-DD HH:mm:ss`.
 
+Send an `Idempotency-Key` header to make retries safe. Repeating a request with the same key returns the transaction created the first time.
+
 ## GET /v1/transactions/:transaction_id
 
 Returns the current state. If a `PENDING` transaction is past `expiry_time`, it is marked `EXPIRED` before the response is sent.
@@ -125,6 +129,10 @@ Responses match `GET /v1/transactions/:transaction_id`. Each state change also s
 
 These endpoints only work on `PENDING` transactions. Once a transaction is final you get `409 INVALID_TRANSACTION_STATE`.
 
+## Midtrans-compatible API
+
+`POST /v2/charge` and `GET /v2/{order_id}/status` accept Midtrans Core API bodies and return Midtrans field names, with HTTP Basic auth where `SECRET_KEY` is the username and the password is empty. Webhooks for these transactions carry `signature_key` instead of the HMAC header. Payment type mapping and unsupported features are in [MIDTRANS.md](MIDTRANS.md).
+
 ## GET /health
 
 ```json
@@ -133,17 +141,18 @@ These endpoints only work on `PENDING` transactions. Once a transaction is final
 
 ## Error codes
 
-| HTTP | `error_code`                 | Cause                                                                                                       |
-| ---- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 400  | `VALIDATION_ERROR`           | Invalid body, missing required field, or invalid field combination                                          |
-| 400  | `BAD_REQUEST`                | Body is not valid JSON                                                                                      |
-| 401  | `UNAUTHORIZED`               | `X-Client-Key` missing or wrong                                                                             |
-| 404  | `TRANSACTION_NOT_FOUND`      | Unknown `transaction_id`                                                                                    |
-| 404  | `NOT_FOUND`                  | Unknown path                                                                                                |
-| 409  | `DUPLICATE_ORDER_ID`         | `order_id` still used by a stored transaction                                                               |
-| 409  | `INVALID_TRANSACTION_STATE`  | Transaction is already final                                                                                |
-| 409  | `TRANSACTION_BUSY`           | Another request is changing the same transaction. Retry shortly.                                            |
-| 500  | `INTERNAL_ERROR`             | Unexpected error. Check the simulator logs.                                                                 |
-| 503  | `QUEUE_UNAVAILABLE`          | The webhook could not be scheduled, usually because Redis is down. State is unchanged, so retrying is safe. |
-| 503  | `STORE_FULL`                 | Store is full and no finished transaction can be evicted                                                    |
-| 503  | `SIMULATED_UPSTREAM_FAILURE` | Random failure from `SIMULATED_FAILURE_RATE`                                                                |
+| HTTP    | `error_code`                 | Cause                                                                                                              |
+| ------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 400     | `VALIDATION_ERROR`           | Invalid body, missing required field, or invalid field combination                                                 |
+| 400     | `BAD_REQUEST`                | Body is not valid JSON                                                                                             |
+| 401     | `UNAUTHORIZED`               | `X-Client-Key` missing or wrong                                                                                    |
+| 404     | `TRANSACTION_NOT_FOUND`      | Unknown `transaction_id`                                                                                           |
+| 404     | `NOT_FOUND`                  | Unknown path                                                                                                       |
+| 404     | `ORDER_NOT_FOUND`            | No transaction with that `order_id` (Midtrans endpoints)                                                           |
+| 409     | `DUPLICATE_ORDER_ID`         | `order_id` still used by a stored transaction                                                                      |
+| 409     | `INVALID_TRANSACTION_STATE`  | Transaction is already final                                                                                       |
+| 409     | `TRANSACTION_BUSY`           | Another request is changing the same transaction. Retry shortly.                                                   |
+| 500     | `INTERNAL_ERROR`             | Unexpected error. Check the simulator logs.                                                                        |
+| 503     | `QUEUE_UNAVAILABLE`          | The webhook could not be scheduled, usually because Redis is down. State is unchanged, so retrying is safe.        |
+| 503     | `STORE_FULL`                 | Store is full and no finished transaction can be evicted                                                           |
+| 4xx/5xx | `SIMULATED_UPSTREAM_FAILURE` | Simulated failure from `SIMULATED_FAILURE_RATE`. The status is chosen by `SIMULATED_FAILURE_STATUS` (default 503). |

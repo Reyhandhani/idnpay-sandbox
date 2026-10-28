@@ -2,6 +2,12 @@
 
 Whenever a transaction changes state, the simulator sends a `POST` to the `callback_url` you set on the charge.
 
+## What your app needs to do
+
+1. Verify `X-IDNPay-Signature` before trusting the body.
+2. Reply with a 2xx status quickly, then do slow work in the background.
+3. Treat a repeated `transaction_id` and `transaction_status` as the same event.
+
 ## When a webhook is sent
 
 A webhook is scheduled when a transaction leaves `PENDING`:
@@ -45,6 +51,8 @@ X-IDNPay-Timestamp: 1793124676
 | `transaction_time`   | Time of the state change, in WIB                         |
 
 `X-IDNPay-Timestamp` is the send time in Unix seconds. It changes on every attempt, including retries.
+
+Transactions created through `/v2` do not use this format. Their body follows Midtrans and carries `signature_key` inside it. See [MIDTRANS.md](MIDTRANS.md#webhooks).
 
 ## Verifying the signature
 

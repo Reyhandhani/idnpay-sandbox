@@ -9,6 +9,7 @@ import { buildWebhookJob } from "./webhook-job";
 import { describeError } from "../errors";
 
 export interface CreateChargeInput {
+  readonly flavor?: "native" | "midtrans";
   readonly order_id: string;
   readonly gross_amount: number;
   readonly payment_type: PaymentType;
@@ -35,12 +36,21 @@ export interface PaymentServiceOptions {
 export class PaymentService {
   private readonly clock: () => number;
   private readonly transitioning = new Set<string>();
+  private readonly idempotency = new Map<string, string>();
 
   constructor(private readonly options: PaymentServiceOptions) {
     this.clock = options.clock ?? Date.now;
   }
 
-  async createCharge(input: CreateChargeInput): Promise<Transaction> {
+  async createCharge(input: CreateChargeInput, idempotencyKey?: string): Promise<Transaction> {
+    if (idempotencyKey) {
+      const existingId = this.idempotency.get(idempotencyKey);
+      const existing = existingId ? this.options.store.findById(existingId) : undefined;
+      if (existing) {
+        return existing;
+      }
+    }
+
     assertCallbackUrl(input.callback_url);
 
     const transactionId = newTransactionId();
@@ -64,6 +74,7 @@ export class PaymentService {
       payment_type: input.payment_type,
       callback_url: input.callback_url,
       payment,
+      flavor: input.flavor ?? "native",
       created_at: now,
       expires_at: now + this.options.chargeExpiryMinutes * 60 * 1000,
       status: "PENDING",
@@ -71,10 +82,22 @@ export class PaymentService {
     };
 
     this.options.store.insert(transaction);
+    if (idempotencyKey) {
+      this.idempotency.set(idempotencyKey, transactionId);
+    }
     this.options.logger.info(
       { transaction_id: transactionId, order_id: input.order_id, payment_type: input.payment_type },
       "Transaction created.",
     );
+    return transaction;
+  }
+
+  async getByOrderId(orderId: string): Promise<Transaction> {
+    const transaction = this.options.store.findByOrderId(orderId);
+    if (!transaction) {
+      throw errors.orderNotFound(orderId);
+    }
+    await this.expireIfDue(transaction);
     return transaction;
   }
 
@@ -135,9 +158,8 @@ export class PaymentService {
   }
 
   /**
-   * Moves a transaction to a new status. The webhook is scheduled first and the status
-   * changes only after that succeeds. If scheduling fails the transaction stays PENDING,
-   * so the caller can retry without losing the notification.
+   * Schedules the webhook before changing status, so a queue failure leaves the
+   * transaction PENDING and the caller can retry without losing the notification.
    */
   private async transition(transaction: Transaction, next: TransactionStatus): Promise<void> {
     const transactionId = transaction.transaction_id;

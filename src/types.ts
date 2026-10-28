@@ -12,6 +12,8 @@ export interface Transaction {
   readonly payment_type: PaymentType;
   readonly callback_url: string;
   readonly payment: PaymentDetails;
+  /** Which API created the transaction. Controls the webhook payload and signature. */
+  readonly flavor: "native" | "midtrans";
   readonly created_at: number;
   readonly expires_at: number;
   status: TransactionStatus;

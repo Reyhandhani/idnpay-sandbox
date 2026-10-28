@@ -33,6 +33,12 @@ describe("loadConfig", () => {
     assert.throws(() => loadConfig({ SIMULATED_FAILURE_RATE: "1.5" }), ConfigError);
   });
 
+  it("defaults the simulated failure status to 503 and accepts overrides", () => {
+    assert.equal(loadConfig({}).simulation.failureStatus, 503);
+    assert.equal(loadConfig({ SIMULATED_FAILURE_STATUS: "504" }).simulation.failureStatus, 504);
+    assert.throws(() => loadConfig({ SIMULATED_FAILURE_STATUS: "200" }), ConfigError);
+  });
+
   it("reads the simulated failure rate and latency", () => {
     const config = loadConfig({ SIMULATED_FAILURE_RATE: "0.25", SIMULATED_LATENCY_MS: "300" });
     assert.equal(config.simulation.failureRate, 0.25);

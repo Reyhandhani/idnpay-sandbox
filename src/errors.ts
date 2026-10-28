@@ -12,6 +12,7 @@ export class AppError extends Error {
 export const errors = {
   validation: (message: string) => new AppError(400, "VALIDATION_ERROR", message),
   unauthorized: () => new AppError(401, "UNAUTHORIZED", "Client key is missing or invalid."),
+  orderNotFound: (orderId: string) => new AppError(404, "ORDER_NOT_FOUND", `Order ${orderId} was not found.`),
   notFound: (transactionId: string) =>
     new AppError(404, "TRANSACTION_NOT_FOUND", `Transaction ${transactionId} was not found.`),
   duplicateOrder: (orderId: string) =>
@@ -36,8 +37,8 @@ export const errors = {
     ),
   storeFull: () =>
     new AppError(503, "STORE_FULL", "Transaction store is full and no completed transaction can be evicted."),
-  simulatedFailure: () =>
-    new AppError(503, "SIMULATED_UPSTREAM_FAILURE", "Simulated upstream network failure."),
+  simulatedFailure: (statusCode: number) =>
+    new AppError(statusCode, "SIMULATED_UPSTREAM_FAILURE", "Simulated upstream network failure."),
 };
 
 /** Extracts a message from any thrown value, for logging. */

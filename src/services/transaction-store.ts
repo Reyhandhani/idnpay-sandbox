@@ -7,11 +7,8 @@ export interface TransactionStoreOptions {
 }
 
 /**
- * In-memory transaction store with a size limit.
- *
- * When full, the oldest finished transaction (anything but PENDING) is evicted.
- * PENDING transactions are never evicted because they can still be paid or expire.
- * Everything is lost when the process stops, which is fine for a test tool.
+ * Bounded in-memory store. When full it evicts the oldest finished transaction and
+ * never a PENDING one, since those can still be paid or expire.
  */
 export class TransactionStore {
   private readonly byId = new Map<string, Transaction>();
@@ -32,6 +29,11 @@ export class TransactionStore {
 
   findById(transactionId: string): Transaction | undefined {
     return this.byId.get(transactionId);
+  }
+
+  findByOrderId(orderId: string): Transaction | undefined {
+    const id = this.idByOrderId.get(orderId);
+    return id === undefined ? undefined : this.byId.get(id);
   }
 
   findAll(): Transaction[] {

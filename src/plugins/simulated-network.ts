@@ -5,6 +5,7 @@ import { errors } from "../errors";
 export interface NetworkSimulation {
   readonly latencyMs: number;
   readonly failureRate: number;
+  readonly failureStatus: number;
 }
 
 /**
@@ -20,7 +21,7 @@ export function simulateNetwork(simulation: NetworkSimulation) {
       await new Promise((resolve) => setTimeout(resolve, simulation.latencyMs));
     }
     if (simulation.failureRate > 0 && randomInt(1_000_000) < simulation.failureRate * 1_000_000) {
-      throw errors.simulatedFailure();
+      throw errors.simulatedFailure(simulation.failureStatus);
     }
   };
 }

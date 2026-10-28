@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 280" role="img" aria-label="PENDING moves to PAID through simulate/pay, to FAILED through simulate/fail, and to EXPIRED through simulate/expire or when expires_at passes.">
+  <rect width="900" height="280" fill="#f4f4f0" />
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <rect x="70" y="108" width="180" height="64" fill="#ffffff" stroke="#8a5a00" stroke-width="2" />
+    <text x="160" y="136" text-anchor="middle" font-size="16" font-weight="bold" fill="#111110">PENDING</text>
+    <text x="160" y="156" text-anchor="middle" font-size="12" fill="#5f5f58">waiting for payment</text>
+
+    <rect x="600" y="40" width="180" height="58" fill="#ffffff" stroke="#14663f" stroke-width="2" />
+    <text x="690" y="66" text-anchor="middle" font-size="16" font-weight="bold" fill="#14663f">PAID</text>
+    <text x="690" y="84" text-anchor="middle" font-size="12" fill="#5f5f58">one signed webhook</text>
+
+    <rect x="600" y="111" width="180" height="58" fill="#ffffff" stroke="#a11d1d" stroke-width="2" />
+    <text x="690" y="137" text-anchor="middle" font-size="16" font-weight="bold" fill="#a11d1d">FAILED</text>
+    <text x="690" y="155" text-anchor="middle" font-size="12" fill="#5f5f58">one signed webhook</text>
+
+    <rect x="600" y="182" width="180" height="58" fill="#ffffff" stroke="#a11d1d" stroke-width="2" />
+    <text x="690" y="208" text-anchor="middle" font-size="16" font-weight="bold" fill="#a11d1d">EXPIRED</text>
+    <text x="690" y="226" text-anchor="middle" font-size="12" fill="#5f5f58">automatic at expires_at</text>
+
+    <line x1="256" y1="120" x2="592" y2="72" stroke="#7a7a72" stroke-width="1.5" marker-end="url(#m)" />
+    <text x="420" y="88" text-anchor="middle" font-size="13" fill="#5f5f58">simulate/pay</text>
+
+    <line x1="256" y1="140" x2="592" y2="140" stroke="#7a7a72" stroke-width="1.5" marker-end="url(#m)" />
+    <text x="420" y="132" text-anchor="middle" font-size="13" fill="#5f5f58">simulate/fail</text>
+
+    <line x1="256" y1="160" x2="592" y2="208" stroke="#7a7a72" stroke-width="1.5" marker-end="url(#m)" />
+    <text x="420" y="200" text-anchor="middle" font-size="13" fill="#5f5f58">simulate/expire</text>
+
+    <text x="70" y="256" font-size="12" fill="#5f5f58">PAID, FAILED, and EXPIRED are final. A transaction never leaves them.</text>
+  </g>
+  <defs>
+    <marker id="m" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a7a72" />
+    </marker>
+  </defs>
+</svg>

@@ -33,6 +33,7 @@ export function makeTransaction(overrides: Partial<Transaction> = {}): Transacti
     payment_type: "qris",
     callback_url: "http://merchant.test/webhook",
     payment: { type: "qris", qr_string: "000201" },
+    flavor: "native",
     created_at: START_TIME,
     expires_at: START_TIME + 3_600_000,
     status: "PENDING",

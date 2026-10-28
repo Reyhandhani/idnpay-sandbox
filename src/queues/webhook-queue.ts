@@ -12,11 +12,8 @@ export interface ClaimedJob {
 }
 
 /**
- * Webhook queue with at-least-once semantics.
- *
- * A claimed job is held as a lease. The job is removed only after the worker calls
- * `ack`. If the worker dies first, `recoverExpired` puts the job back once its
- * lease runs out.
+ * At-least-once queue: a claimed job is held as a lease and removed only on ack,
+ * so a worker that dies mid-delivery gets the job back when the lease expires.
  */
 export interface WebhookQueue {
   enqueue(scheduled: ScheduledJob): Promise<void>;

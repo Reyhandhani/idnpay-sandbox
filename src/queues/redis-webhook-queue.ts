@@ -21,14 +21,9 @@ interface LeaseRecord {
 }
 
 /**
- * Webhook queue backed by Redis sorted sets.
- *
- * - `delayed` holds scheduled jobs, scored by execution time (epoch ms).
- * - `leased` holds jobs in flight, scored by lease deadline. Each claim gets its own
- *   UUID token, so a stale worker cannot ack a lease now owned by someone else.
- *
- * Moving a member between sets happens inside one Lua script, so a job cannot vanish
- * between two commands. The worker that loses the race sees ZREM return 0.
+ * Two sorted sets, `delayed` and `leased`, moved between in one Lua script so a job
+ * cannot vanish mid-move. Each claim carries its own token, so a stale worker cannot
+ * ack a lease it no longer holds.
  */
 export class RedisWebhookQueue implements WebhookQueue {
   private readonly delayedKey: string;

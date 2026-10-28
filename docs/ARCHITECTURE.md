@@ -16,6 +16,8 @@ client ──HTTP /v1──▶ routes → plugins → controllers → services
                                                                   WebhookWorker ──POST──▶ callback_url
 ```
 
+The Midtrans-compatible routes under `/v2` map their bodies onto the same services. Each transaction records which API created it, and the webhook builder picks the payload shape from that field.
+
 Two things run in the background: the expiry sweeper (once a second) and the webhook worker (every `WEBHOOK_TICK_MS`).
 
 | Folder         | Contents                                                             |

@@ -18,6 +18,7 @@ export interface AppConfig {
   readonly simulation: {
     readonly latencyMs: number;
     readonly failureRate: number;
+    readonly failureStatus: number;
   };
   readonly dashboardEnabled: boolean;
 }
@@ -95,6 +96,7 @@ export function loadConfig(env: Env = process.env): AppConfig {
     simulation: {
       latencyMs: readInteger(env, "SIMULATED_LATENCY_MS", 0, 0, 60_000),
       failureRate: readRate(env, "SIMULATED_FAILURE_RATE", 0),
+      failureStatus: readInteger(env, "SIMULATED_FAILURE_STATUS", 503, 400, 599),
     },
     dashboardEnabled: readString(env, "DASHBOARD_ENABLED", "true") !== "false",
   };

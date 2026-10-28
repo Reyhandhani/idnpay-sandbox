@@ -1,7 +1,6 @@
 /**
- * Builds a dynamic QRIS payload following the EMVCo Merchant-Presented QR spec.
- * Every field is TLV encoded (two-digit tag, two-digit length, value) and the payload
- * ends with a CRC-16/CCITT-FALSE checksum in tag 63.
+ * Builds an EMVCo merchant-presented QR payload: TLV fields, closed by a
+ * CRC-16/CCITT-FALSE checksum in tag 63.
  */
 
 const NMID = "ID1025000000001";

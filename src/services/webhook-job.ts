@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { type PaymentType, STATUS_CODES, type TransactionStatus } from "../config/constants";
 import type { Transaction, WebhookJob } from "../types";
+import { midtransWebhookBody } from "./midtrans";
 import { signWebhook } from "./signature";
 import { formatWib } from "./time";
 
@@ -23,6 +24,17 @@ export interface BuildWebhookJobInput {
 }
 
 export function buildWebhookJob({ transaction, status, now, secretKey }: BuildWebhookJobInput): WebhookJob {
+  if (transaction.flavor === "midtrans") {
+    return {
+      id: randomUUID(),
+      transaction_id: transaction.transaction_id,
+      callback_url: transaction.callback_url,
+      body: JSON.stringify(midtransWebhookBody(transaction, status, now, secretKey)),
+      signature: "",
+      failures: 0,
+    };
+  }
+
   const statusCode = STATUS_CODES[status];
   const body: WebhookBody = {
     status_code: statusCode,
