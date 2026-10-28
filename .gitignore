@@ -1,0 +1,23 @@
+# Dependensi dan hasil build
+node_modules/
+dist/
+coverage/
+
+# Konfigurasi lokal berisi rahasia
+.env
+.env.*
+!.env.example
+
+# Paket dan hasil pack
+*.tgz
+
+# Log dan berkas sistem
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.tsbuildinfo

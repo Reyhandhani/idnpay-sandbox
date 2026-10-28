@@ -1,0 +1,71 @@
+{
+  "name": "idnpay-sandbox",
+  "version": "0.1.0",
+  "description": "Open-source local payment gateway simulator for Indonesia (QRIS, Virtual Account, e-Wallet) with HMAC-signed webhooks.",
+  "license": "MIT",
+  "homepage": "https://github.com/Reyhandhani/idnpay-sandbox#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Reyhandhani/idnpay-sandbox.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Reyhandhani/idnpay-sandbox/issues"
+  },
+  "keywords": [
+    "payment gateway",
+    "simulator",
+    "indonesia",
+    "qris",
+    "virtual account",
+    "e-wallet",
+    "webhook",
+    "midtrans",
+    "sandbox"
+  ],
+  "type": "commonjs",
+  "main": "dist/src/index.js",
+  "bin": {
+    "idnpay-sandbox": "dist/src/index.js"
+  },
+  "files": [
+    "dist/src",
+    "public",
+    "docs",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "start": "node --env-file-if-exists=.env dist/src/index.js",
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "ci": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "audit": "npm audit --omit=dev"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.8",
+    "fastify": "^5.12.7",
+    "ioredis": "^5.10.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "ioredis-mock": "^8.13.1",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1"
+  }
+}

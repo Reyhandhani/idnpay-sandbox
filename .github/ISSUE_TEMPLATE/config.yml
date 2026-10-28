@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Pertanyaan dan diskusi
+    url: https://github.com/Reyhandhani/idnpay-sandbox/discussions
+    about: Pertanyaan soal pemakaian sebaiknya ditanya di sini.
+  - name: Kerentanan keamanan
+    url: https://github.com/Reyhandhani/idnpay-sandbox/security/advisories/new
+    about: Laporkan kerentanan secara privat.

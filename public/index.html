@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>idnpay-sandbox · Dashboard</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --border: #d0d7de;
+        --muted: #656d76;
+        --accent: #0969da;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        line-height: 1.5;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 1.4rem;
+        margin: 0 0 4px;
+      }
+      h2 {
+        font-size: 1.05rem;
+        margin: 0 0 12px;
+      }
+      p.lead {
+        color: var(--muted);
+        margin: 0 0 24px;
+      }
+      section {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        font-size: 0.85rem;
+        gap: 4px;
+      }
+      input,
+      select {
+        font: inherit;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+      }
+      button {
+        font: inherit;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--accent);
+        background: var(--accent);
+        color: #fff;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: transparent;
+        color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      td.mono,
+      pre {
+        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+        font-size: 0.82rem;
+      }
+      pre {
+        background: rgba(127, 127, 127, 0.1);
+        padding: 12px;
+        border-radius: 6px;
+        overflow: auto;
+        max-height: 320px;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+      .status {
+        font-weight: 600;
+      }
+      .status-PENDING {
+        color: #9a6700;
+      }
+      .status-PAID {
+        color: #1a7f37;
+      }
+      .status-EXPIRED,
+      .status-FAILED {
+        color: #cf222e;
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin: 8px 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>idnpay-sandbox</h1>
+    <p class="lead">Dashboard untuk pengujian manual. Gunakan hanya di lingkungan pengembangan.</p>
+
+    <section>
+      <h2>Kunci klien</h2>
+      <label>
+        X-Client-Key
+        <input id="clientKey" type="password" autocomplete="off" placeholder="idnpay-dev-client-key" />
+      </label>
+      <p class="hint">
+        Kunci disimpan sementara di sessionStorage browser ini dan tidak dikirim ke pihak lain.
+      </p>
+    </section>
+
+    <section>
+      <h2>Buat transaksi</h2>
+      <form id="chargeForm">
+        <div class="grid">
+          <label>order_id <input name="order_id" required maxlength="50" value="ORDER-1001" /></label>
+          <label
+            >gross_amount (IDR) <input name="gross_amount" type="number" min="1" required value="150000"
+          /></label>
+          <label>
+            payment_type
+            <select name="payment_type">
+              <option value="qris">qris</option>
+              <option value="bank_transfer">bank_transfer</option>
+              <option value="ewallet">ewallet</option>
+            </select>
+          </label>
+          <label>
+            bank (bank_transfer)
+            <select name="bank">
+              <option value="bca">bca</option>
+              <option value="mandiri">mandiri</option>
+              <option value="bri">bri</option>
+              <option value="bni">bni</option>
+              <option value="permata">permata</option>
+            </select>
+          </label>
+          <label>
+            ewallet (ewallet)
+            <select name="ewallet">
+              <option value="gopay">gopay</option>
+              <option value="ovo">ovo</option>
+              <option value="shopeepay">shopeepay</option>
+              <option value="dana">dana</option>
+            </select>
+          </label>
+          <label
+            >callback_url
+            <input name="callback_url" required value="http://host.docker.internal:8000/api/payments/webhook"
+          /></label>
+        </div>
+        <div class="actions">
+          <button type="submit">Kirim charge</button>
+        </div>
+      </form>
+    </section>
+
+    <section>
+      <div class="actions" style="margin-top: 0; justify-content: space-between; align-items: center">
+        <h2 style="margin: 0">Transaksi</h2>
+        <button id="refresh" class="secondary" type="button">Muat ulang</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>order_id</th>
+            <th>Metode</th>
+            <th>Jumlah</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Respons terakhir</h2>
+      <pre id="output">Belum ada permintaan.</pre>
+    </section>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

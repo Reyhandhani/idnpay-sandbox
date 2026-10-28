@@ -1,0 +1,10 @@
+# Normalisasi akhir baris ke LF di repositori.
+* text=auto eol=lf
+
+# Berkas biner tidak boleh dinormalisasi.
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

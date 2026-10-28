@@ -1,0 +1,36 @@
+name: idnpay-sandbox
+
+services:
+  simulator:
+    build: .
+    image: idnpay-sandbox:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${PORT:-9000}:9000"
+    environment:
+      CLIENT_KEY: ${CLIENT_KEY:-idnpay-dev-client-key}
+      SECRET_KEY: ${SECRET_KEY:-idnpay-dev-secret-key}
+      MERCHANT_NAME: ${MERCHANT_NAME:-IDNPAY MOCK}
+      MERCHANT_CITY: ${MERCHANT_CITY:-JAKARTA}
+      CHARGE_EXPIRY_MINUTES: ${CHARGE_EXPIRY_MINUTES:-60}
+      WEBHOOK_RETRY_LIMIT: ${WEBHOOK_RETRY_LIMIT:-5}
+      SIMULATED_LATENCY_MS: ${SIMULATED_LATENCY_MS:-0}
+      SIMULATED_FAILURE_RATE: ${SIMULATED_FAILURE_RATE:-0}
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

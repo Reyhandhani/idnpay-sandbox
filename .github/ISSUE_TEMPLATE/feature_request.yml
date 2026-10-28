@@ -1,0 +1,22 @@
+name: Usulan fitur
+description: Usulkan fitur atau perubahan perilaku.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang ingin diselesaikan
+      description: Ceritakan skenario pengujian yang belum bisa dilakukan.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Usulan
+      description: Bentuk API, format webhook, atau konfigurasi yang kamu harapkan.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif yang sudah dipertimbangkan
