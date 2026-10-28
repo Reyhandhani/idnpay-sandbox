@@ -145,6 +145,40 @@ Final states never change again, and every state change sends exactly one webhoo
 
 Virtual Account numbers use a different prefix per bank so they are easy to recognize in logs. These prefixes are illustrative, not real bank numbers. Deeplinks follow each provider's scheme but do not open a real app.
 
+## FAQ
+
+**Is it a drop-in replacement for the Midtrans sandbox?**
+For charge, status, and webhook flows it covers the subset listed in [docs/MIDTRANS.md](docs/MIDTRANS.md). Snap, cards, refunds, and payouts are not implemented.
+
+**Does any real money move?**
+No. Nothing connects to a bank, and the Virtual Account numbers are illustrative.
+
+**Can I run it in CI?**
+Yes. Start it as a service container in the same job and point `callback_url` at the service name. [docs/CI.md](docs/CI.md) has the workflow.
+
+**My app runs on the host. Where do webhooks go?**
+Use `host.docker.internal` in `callback_url`. The table under [Connecting your app](#connecting-your-app) covers the other combinations.
+
+**How do I test a webhook that fails?**
+Point `callback_url` at an endpoint that returns 503. The simulator retries with a delay of `2^n` seconds until `WEBHOOK_RETRY_LIMIT` (5 by default), and every attempt is signed.
+
+### Bahasa Indonesia
+
+**Apa ini bisa menggantikan sandbox Midtrans?**
+Untuk charge, cek status, dan webhook, bisa, sebatas yang tercantum di [docs/MIDTRANS.md](docs/MIDTRANS.md). Snap, kartu, refund, dan payout belum ada.
+
+**Ada uang sungguhan yang berpindah?**
+Tidak. Tidak ada koneksi ke bank, dan nomor Virtual Account di sini hanya contoh.
+
+**Bisa dipakai di CI?**
+Bisa. Jalankan sebagai service container di job yang sama, lalu arahkan `callback_url` ke nama service. Contoh workflow-nya ada di [docs/CI.md](docs/CI.md).
+
+**Aplikasi saya jalan di host, webhook dikirim ke mana?**
+Pakai `host.docker.internal` di `callback_url`. Kombinasi lain ada di tabel [Connecting your app](#connecting-your-app).
+
+**Gimana cara ngetes webhook yang gagal?**
+Arahkan `callback_url` ke endpoint yang membalas 503. Simulator mencoba ulang dengan jeda `2^n` detik sampai `WEBHOOK_RETRY_LIMIT` (default 5), dan setiap percobaan tetap ditandatangani.
+
 ## Documentation
 
 - [API](docs/API.md): endpoints, request and response formats, error codes
