@@ -2,8 +2,10 @@
   "use strict";
 
   var KEY_STORAGE = "idnpay-sandbox:client-key";
+  var THEME_STORAGE = "idnpay-sandbox:theme";
   var REFRESH_MS = 3000;
 
+  var themeToggle = document.getElementById("themeToggle");
   var keyInput = document.getElementById("keyInput");
   var testKey = document.getElementById("testKey");
   var keyStatus = document.getElementById("keyStatus");
@@ -13,14 +15,27 @@
   var ewalletField = document.getElementById("ewalletField");
   var submitCharge = document.getElementById("submitCharge");
   var formError = document.getElementById("formError");
-  var chargeResult = document.getElementById("chargeResult");
-  var chargeDetails = document.getElementById("chargeDetails");
-  var chargeHint = document.getElementById("chargeHint");
+  var listStatus = document.getElementById("listStatus");
   var rows = document.getElementById("rows");
   var refresh = document.getElementById("refresh");
   var output = document.getElementById("output");
 
   var loading = false;
+
+  function applyTheme(mode) {
+    document.documentElement.dataset.theme = mode;
+    themeToggle.textContent = mode === "dark" ? "Light theme" : "Dark theme";
+  }
+
+  var savedTheme = localStorage.getItem(THEME_STORAGE);
+  var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(savedTheme || (systemDark ? "dark" : "light"));
+
+  themeToggle.addEventListener("click", function () {
+    var next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_STORAGE, next);
+    applyTheme(next);
+  });
 
   keyInput.value = sessionStorage.getItem(KEY_STORAGE) || "";
   keyInput.addEventListener("change", function () {
@@ -30,14 +45,17 @@
 
   function setKeyStatus(text, kind) {
     keyStatus.textContent = text;
-    keyStatus.className = "badge" + (kind ? " " + kind : "");
+    keyStatus.className = "status-line" + (kind ? " " + kind : "");
+  }
+
+  function setListStatus(text, kind) {
+    listStatus.textContent = text;
+    listStatus.className = "note" + (kind ? " " + kind : "");
+    listStatus.hidden = !text;
   }
 
   function request(method, path, body) {
-    var options = {
-      method: method,
-      headers: { "X-Client-Key": keyInput.value },
-    };
+    var options = { method: method, headers: { "X-Client-Key": keyInput.value } };
     if (body !== undefined) {
       options.headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(body);
@@ -51,7 +69,7 @@
           return data;
         },
         function () {
-          throw new Error("HTTP " + response.status + " with no JSON body");
+          throw new Error("HTTP " + response.status + " without a JSON body");
         },
       );
     });
@@ -76,6 +94,121 @@
     ewalletField.hidden = paymentType.value !== "ewallet";
   }
 
+  function el(tag, className, text) {
+    var node = document.createElement(tag);
+    if (className) {
+      node.className = className;
+    }
+    if (text !== undefined) {
+      node.textContent = text;
+    }
+    return node;
+  }
+
+  function money(value) {
+    return "Rp " + Number(value).toLocaleString("id-ID");
+  }
+
+  function describeMethod(transaction) {
+    if (transaction.payment_type === "bank_transfer") {
+      return transaction.bank.toUpperCase() + " " + transaction.va_number;
+    }
+    if (transaction.payment_type === "ewallet") {
+      return transaction.provider;
+    }
+    return "QRIS";
+  }
+
+  function actionButton(label, action, transactionId) {
+    var button = el("button", "ghost", label);
+    button.type = "button";
+    button.addEventListener("click", function () {
+      button.disabled = true;
+      request("POST", "/v1/simulate/" + action, { transaction_id: transactionId })
+        .then(function (transaction) {
+          showResponse(transaction);
+          return loadTransactions();
+        })
+        .catch(function (error) {
+          showResponse({ error: error.message });
+          button.disabled = false;
+        });
+    });
+    return button;
+  }
+
+  function emptyRow(message) {
+    var row = el("tr");
+    var cell = el("td", "empty", message);
+    cell.colSpan = 5;
+    row.appendChild(cell);
+    rows.appendChild(row);
+  }
+
+  function renderRows(transactions) {
+    rows.textContent = "";
+
+    if (transactions.length === 0) {
+      emptyRow(
+        keyInput.value
+          ? "No transactions yet. Create one in step 02."
+          : "Connect first, then create a charge.",
+      );
+      return;
+    }
+
+    transactions.forEach(function (transaction) {
+      var row = el("tr");
+      row.appendChild(el("td", "mono", transaction.order_id));
+      row.appendChild(el("td", "mono", describeMethod(transaction)));
+      row.appendChild(el("td", "amount mono", money(transaction.gross_amount)));
+      row.appendChild(
+        el("td", "status status-" + transaction.transaction_status, transaction.transaction_status),
+      );
+
+      var actions = el("td");
+      if (transaction.transaction_status === "PENDING") {
+        actions.appendChild(actionButton("Pay", "pay", transaction.transaction_id));
+        actions.appendChild(actionButton("Fail", "fail", transaction.transaction_id));
+        actions.appendChild(actionButton("Expire", "expire", transaction.transaction_id));
+      } else {
+        actions.textContent = "Finished";
+      }
+      row.appendChild(actions);
+
+      rows.appendChild(row);
+    });
+  }
+
+  function loadTransactions() {
+    if (loading) {
+      return Promise.resolve();
+    }
+    if (!keyInput.value) {
+      renderRows([]);
+      setListStatus("");
+      return Promise.resolve();
+    }
+
+    loading = true;
+    setListStatus("Loading transactions...");
+    return request("GET", "/v1/transactions?limit=50")
+      .then(function (data) {
+        renderRows(data.data);
+        setListStatus("");
+      })
+      .catch(function (error) {
+        renderRows([]);
+        setListStatus(
+          "Could not load transactions: " + error.message + " Press Refresh to try again.",
+          "error",
+        );
+      })
+      .finally(function () {
+        loading = false;
+      });
+  }
+
   paymentType.addEventListener("change", togglePaymentFields);
   togglePaymentFields();
 
@@ -85,52 +218,13 @@
       .then(function (data) {
         showResponse(data);
         setKeyStatus("Connected", "ok");
+        return loadTransactions();
       })
       .catch(function (error) {
         setKeyStatus("Not connected", "error");
         showResponse({ error: error.message });
       });
   });
-
-  function detail(label, value, mono) {
-    var dt = document.createElement("dt");
-    dt.textContent = label;
-    var dd = document.createElement("dd");
-    if (mono) {
-      var code = document.createElement("code");
-      code.textContent = value;
-      dd.appendChild(code);
-    } else {
-      dd.textContent = value;
-    }
-    chargeDetails.appendChild(dt);
-    chargeDetails.appendChild(dd);
-  }
-
-  function showCharge(transaction) {
-    chargeDetails.textContent = "";
-    detail("order_id", transaction.order_id, true);
-    detail("amount", "Rp " + Number(transaction.gross_amount).toLocaleString("id-ID"));
-    detail("status", transaction.transaction_status);
-    detail("expires at", transaction.expiry_time + " WIB");
-
-    if (transaction.payment_type === "qris") {
-      detail("QR string", transaction.qr_string, true);
-      chargeHint.textContent =
-        "Render qr_string as a QR code if you need one, or go straight to step 3 and click Pay.";
-    } else if (transaction.payment_type === "bank_transfer") {
-      detail("bank", transaction.bank.toUpperCase());
-      detail("VA number", transaction.va_number, true);
-      chargeHint.textContent = "Use the VA number above in your app, or go to step 3 and click Pay.";
-    } else {
-      detail("provider", transaction.provider);
-      detail("deeplink", transaction.deeplink_url, true);
-      chargeHint.textContent = "The deeplink does not open a real app. Go to step 3 and click Pay.";
-    }
-
-    chargeResult.hidden = false;
-    chargeResult.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
 
   chargeForm.addEventListener("submit", function (event) {
     event.preventDefault();
@@ -155,7 +249,6 @@
     request("POST", "/v1/charge", body)
       .then(function (transaction) {
         showResponse(transaction);
-        showCharge(transaction);
         setKeyStatus("Connected", "ok");
         return loadTransactions();
       })
@@ -167,115 +260,6 @@
         submitCharge.disabled = false;
       });
   });
-
-  function describeMethod(transaction) {
-    if (transaction.payment_type === "bank_transfer") {
-      return transaction.bank.toUpperCase() + " " + transaction.va_number;
-    }
-    if (transaction.payment_type === "ewallet") {
-      return transaction.provider;
-    }
-    return "QRIS";
-  }
-
-  function actionButton(label, action, transactionId) {
-    var button = document.createElement("button");
-    button.type = "button";
-    button.className = "secondary";
-    button.textContent = label;
-    button.addEventListener("click", function () {
-      button.disabled = true;
-      request("POST", "/v1/simulate/" + action, { transaction_id: transactionId })
-        .then(function (transaction) {
-          showResponse(transaction);
-          return loadTransactions();
-        })
-        .catch(function (error) {
-          showResponse({ error: error.message });
-        })
-        .finally(function () {
-          button.disabled = false;
-        });
-    });
-    return button;
-  }
-
-  function emptyRow(message) {
-    var row = document.createElement("tr");
-    var cell = document.createElement("td");
-    cell.colSpan = 5;
-    cell.textContent = message;
-    row.appendChild(cell);
-    rows.appendChild(row);
-  }
-
-  function renderRows(transactions) {
-    rows.textContent = "";
-    if (transactions.length === 0) {
-      emptyRow("No transactions yet. Create one in step 2.");
-      return;
-    }
-
-    transactions.forEach(function (transaction) {
-      var row = document.createElement("tr");
-
-      var orderCell = document.createElement("td");
-      orderCell.className = "mono";
-      orderCell.textContent = transaction.order_id;
-      row.appendChild(orderCell);
-
-      var methodCell = document.createElement("td");
-      methodCell.className = "mono";
-      methodCell.textContent = describeMethod(transaction);
-      row.appendChild(methodCell);
-
-      var amountCell = document.createElement("td");
-      amountCell.textContent = "Rp " + Number(transaction.gross_amount).toLocaleString("id-ID");
-      row.appendChild(amountCell);
-
-      var statusCell = document.createElement("td");
-      var status = document.createElement("span");
-      status.className = "status status-" + transaction.transaction_status;
-      status.textContent = transaction.transaction_status;
-      statusCell.appendChild(status);
-      row.appendChild(statusCell);
-
-      var actionCell = document.createElement("td");
-      if (transaction.transaction_status === "PENDING") {
-        actionCell.appendChild(actionButton("Pay", "pay", transaction.transaction_id));
-        actionCell.appendChild(actionButton("Fail", "fail", transaction.transaction_id));
-        actionCell.appendChild(actionButton("Expire", "expire", transaction.transaction_id));
-      } else {
-        actionCell.textContent = "—";
-      }
-      row.appendChild(actionCell);
-
-      rows.appendChild(row);
-    });
-  }
-
-  function loadTransactions() {
-    if (loading) {
-      return Promise.resolve();
-    }
-    if (!keyInput.value) {
-      rows.textContent = "";
-      emptyRow("Set your client key in step 1 to load transactions.");
-      return Promise.resolve();
-    }
-    loading = true;
-    return request("GET", "/v1/transactions?limit=50")
-      .then(function (data) {
-        renderRows(data.data);
-      })
-      .catch(function (error) {
-        rows.textContent = "";
-        emptyRow("Could not load transactions: " + error.message);
-      })
-      .finally(function () {
-        loading = false;
-      });
-  }
 
   refresh.addEventListener("click", function () {
     loadTransactions();

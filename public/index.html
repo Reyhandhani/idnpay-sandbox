@@ -3,34 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>idnpay-sandbox · dashboard</title>
+    <title>idnpay-sandbox</title>
     <style>
       :root {
-        color-scheme: light dark;
-        --bg: #ffffff;
-        --fg: #1f2328;
-        --muted: #59636e;
-        --border: #d1d9e0;
-        --surface: #f6f8fa;
-        --accent: #0969da;
-        --accent-fg: #ffffff;
-        --pending: #9a6700;
-        --paid: #1a7f37;
-        --bad: #cf222e;
+        color-scheme: light;
+        --paper: #f4f4f0;
+        --ink: #111110;
+        --muted: #5f5f58;
+        --rule: #d6d6cf;
+        --control: #7a7a72;
+        --field: #ffffff;
+        --accent: #14663f;
+        --pending: #8a5a00;
+        --paid: #14663f;
+        --bad: #a11d1d;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --bg: #0d1117;
-          --fg: #e6edf3;
-          --muted: #9198a1;
-          --border: #3d444d;
-          --surface: #151b23;
-          --accent: #1f6feb;
-          --accent-fg: #ffffff;
-          --pending: #d29922;
-          --paid: #3fb950;
-          --bad: #f85149;
-        }
+      :root[data-theme="dark"] {
+        color-scheme: dark;
+        --paper: #121211;
+        --ink: #ecece7;
+        --muted: #a3a39b;
+        --rule: #33332f;
+        --control: #6b6b64;
+        --field: #1a1a18;
+        --accent: #58a97a;
+        --pending: #d8a33a;
+        --paid: #58a97a;
+        --bad: #ef6b6b;
       }
       * {
         box-sizing: border-box;
@@ -40,176 +39,183 @@
       }
       body {
         margin: 0 auto;
-        max-width: 960px;
-        font-family:
-          system-ui,
-          -apple-system,
-          "Segoe UI",
-          sans-serif;
-        line-height: 1.5;
-        padding: 32px 24px 64px;
-        background: var(--bg);
-        color: var(--fg);
+        max-width: 880px;
+        padding: 40px 32px 72px;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+        font-size: 15px;
+        line-height: 1.45;
+        -webkit-font-smoothing: antialiased;
       }
-      h1 {
-        font-size: 1.5rem;
-        margin: 0 0 6px;
+      .mono {
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-variant-numeric: tabular-nums;
       }
-      h2 {
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px 24px;
+        padding-bottom: 14px;
+        border-bottom: 2px solid var(--ink);
+      }
+      .wordmark {
         font-size: 1.05rem;
-        margin: 0 0 4px;
       }
-      p {
-        margin: 0;
-      }
-      p.lead {
+      .wordmark span {
         color: var(--muted);
-        margin-bottom: 28px;
       }
-      p.hint,
-      p.step {
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .header-right a {
         color: var(--muted);
-        font-size: 0.85rem;
+        font-size: 13px;
       }
-      p.step {
-        margin-bottom: 14px;
+      .header-right a:hover {
+        color: var(--ink);
+      }
+      .lede {
+        margin: 22px 0 0;
+        max-width: 58ch;
+        color: var(--muted);
       }
       section {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 18px;
-        margin-bottom: 18px;
+        margin-top: 34px;
+        padding-top: 18px;
+        border-top: 1px solid var(--rule);
       }
-      .grid {
+      .section-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+      .section-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .section-title .num {
+        margin-right: 10px;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .note {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--muted);
+        max-width: 62ch;
+      }
+      .grid-form {
         display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px 18px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       }
-      label {
+      label.field {
         display: flex;
         flex-direction: column;
-        font-size: 0.85rem;
-        gap: 4px;
+        gap: 5px;
+        font-size: 13px;
+        color: var(--muted);
       }
       input,
       select {
         font: inherit;
-        padding: 7px 9px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        background: var(--surface);
-        color: var(--fg);
+        font-size: 16px;
+        min-height: 44px;
+        padding: 8px 10px;
+        border: 1px solid var(--control);
+        border-radius: 0;
+        background: var(--field);
+        color: var(--ink);
       }
       select option {
-        background: var(--surface);
-        color: var(--fg);
+        background: var(--field);
+        color: var(--ink);
       }
       input:focus-visible,
       select:focus-visible,
       button:focus-visible,
-      summary:focus-visible {
+      a:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
-      button {
-        font: inherit;
-        padding: 7px 14px;
-        border-radius: 6px;
-        border: 1px solid var(--accent);
-        background: var(--accent);
-        color: var(--accent-fg);
-        cursor: pointer;
-      }
-      button.secondary {
-        background: transparent;
-        color: var(--accent);
-      }
-      button:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-      }
-      .row {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
       .actions {
         display: flex;
-        gap: 8px;
-        margin-top: 14px;
+        align-items: center;
+        gap: 10px;
         flex-wrap: wrap;
+        margin-top: 16px;
       }
-      .badge {
-        display: inline-block;
-        padding: 2px 10px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        font-size: 0.8rem;
+      button {
+        font: inherit;
+        font-size: 14px;
+        min-height: 44px;
+        padding: 10px 16px;
+        border: 1px solid var(--ink);
+        border-radius: 0;
+        background: var(--ink);
+        color: var(--paper);
+        cursor: pointer;
+      }
+      button.ghost {
+        background: transparent;
+        color: var(--ink);
+        border-color: var(--control);
+      }
+      button:hover:not(:disabled) {
+        opacity: 0.8;
+      }
+      button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+      .status-line {
+        font-size: 13px;
         color: var(--muted);
       }
-      .badge.ok {
+      .status-line.ok {
         color: var(--paid);
-        border-color: var(--paid);
       }
-      .badge.error {
+      .status-line.error {
         color: var(--bad);
-        border-color: var(--bad);
+      }
+      .error {
+        margin: 10px 0 0;
+        color: var(--bad);
+        font-size: 13px;
+      }
+      .table-wrap {
+        overflow-x: auto;
       }
       table {
         width: 100%;
+        min-width: 560px;
         border-collapse: collapse;
-        font-size: 0.9rem;
-        margin-top: 14px;
-      }
-      th,
-      td {
-        text-align: left;
-        padding: 9px 8px;
-        border-bottom: 1px solid var(--border);
-        vertical-align: top;
+        font-size: 14px;
       }
       th {
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        padding: 0 10px 8px 0;
+        border-bottom: 1px solid var(--rule);
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--muted);
       }
-      td.mono,
-      code,
-      pre {
-        font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-        font-size: 0.82rem;
+      td {
+        padding: 12px 10px 12px 0;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
       }
-      code {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        padding: 1px 5px;
-        word-break: break-all;
-      }
-      dl {
-        display: grid;
-        grid-template-columns: 150px minmax(0, 1fr);
-        gap: 8px 14px;
-        margin: 14px 0 0;
-        font-size: 0.9rem;
-      }
-      dt {
-        color: var(--muted);
-      }
-      dd {
-        margin: 0;
-        word-break: break-all;
-      }
-      pre {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        padding: 12px;
-        border-radius: 6px;
-        overflow: auto;
-        max-height: 320px;
-        white-space: pre-wrap;
+      .amount {
+        text-align: right;
+        white-space: nowrap;
       }
       .status {
         font-weight: 600;
@@ -220,62 +226,98 @@
       .status-PAID {
         color: var(--paid);
       }
-      .status-EXPIRED,
-      .status-FAILED {
+      .status-FAILED,
+      .status-EXPIRED {
         color: var(--bad);
       }
-      .error {
-        color: var(--bad);
-        font-size: 0.85rem;
-        margin-top: 10px;
+      .empty {
+        padding: 14px 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      details {
+        margin-top: 34px;
+        padding-top: 14px;
+        border-top: 1px solid var(--rule);
       }
       summary {
         cursor: pointer;
+        font-size: 14px;
         color: var(--muted);
-        font-size: 0.85rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+      }
+      pre {
+        margin: 12px 0 0;
+        padding: 12px;
+        border: 1px solid var(--rule);
+        background: var(--field);
+        overflow: auto;
+        max-height: 320px;
+        white-space: pre-wrap;
+        word-break: break-all;
+        font-size: 13px;
+      }
+      @media (max-width: 640px) {
+        body {
+          padding: 28px 20px 56px;
+        }
+        .header-right a {
+          display: none;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>idnpay-sandbox</h1>
-    <p class="lead">
-      A dashboard for manual testing. Three steps: connect, create a charge, then send the webhook by changing
-      the transaction status.
+    <header>
+      <div class="wordmark"><b>idnpay</b><span>-sandbox</span></div>
+      <div class="header-right">
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox">Source</a>
+        <a href="https://github.com/Reyhandhani/idnpay-sandbox/blob/main/docs/API.md">API</a>
+        <button id="themeToggle" type="button" class="ghost">Dark theme</button>
+      </div>
+    </header>
+
+    <p class="lede">
+      Create a charge, change its status, and watch the signed webhook reach your app. Everything runs on this
+      machine.
     </p>
 
     <section>
-      <h2>1. Connect</h2>
-      <p class="step">The simulator rejects requests without a valid key.</p>
-      <div class="grid">
-        <label>
+      <div class="section-head">
+        <h2 class="section-title"><span class="num">01</span>Connect</h2>
+        <span id="keyStatus" class="status-line" role="status">Not checked</span>
+      </div>
+      <div class="grid-form">
+        <label class="field">
           X-Client-Key
           <input id="keyInput" type="password" autocomplete="off" placeholder="idnpay-dev-client-key" />
         </label>
-        <div class="row" style="align-items: flex-end; padding-bottom: 1px">
-          <button id="testKey" type="button" class="secondary">Test connection</button>
-          <span id="keyStatus" class="badge">Not checked</span>
+        <div class="actions" style="margin-top: 0; align-items: flex-end">
+          <button id="testKey" type="button" class="ghost">Test connection</button>
         </div>
       </div>
-      <p class="hint">
-        This is <code>CLIENT_KEY</code> from your <code>.env</code> or <code>docker-compose.yml</code>. The
-        default is <code>idnpay-dev-client-key</code>. The value stays in this tab only.
+      <p class="note">
+        <code>CLIENT_KEY</code> from your <code>.env</code>. Default is <code>idnpay-dev-client-key</code>.
       </p>
     </section>
 
     <section>
-      <h2>2. Create a charge</h2>
-      <p class="step">Pick a payment type. The form shows only the fields that type needs.</p>
+      <div class="section-head">
+        <h2 class="section-title"><span class="num">02</span>Create a charge</h2>
+      </div>
       <form id="chargeForm">
-        <div class="grid">
-          <label
+        <div class="grid-form">
+          <label class="field"
             >order_id
-            <input name="order_id" required maxlength="50" pattern="[A-Za-z0-9._-]+" value="ORDER-1001"
+            <input name="order_id" required maxlength="50" pattern="[A-Za-z0-9._-]+" placeholder="ORDER-1001"
           /></label>
-          <label
+          <label class="field"
             >gross_amount (IDR)
-            <input name="gross_amount" type="number" min="1" max="100000000" required value="150000"
+            <input name="gross_amount" type="number" min="1" max="100000000" required placeholder="150000"
           /></label>
-          <label>
+          <label class="field">
             payment_type
             <select name="payment_type" id="paymentType">
               <option value="qris">qris</option>
@@ -283,7 +325,7 @@
               <option value="ewallet">ewallet</option>
             </select>
           </label>
-          <label id="bankField" hidden>
+          <label class="field" id="bankField" hidden>
             bank
             <select name="bank">
               <option value="bca">bca</option>
@@ -293,7 +335,7 @@
               <option value="permata">permata</option>
             </select>
           </label>
-          <label id="ewalletField" hidden>
+          <label class="field" id="ewalletField" hidden>
             ewallet
             <select name="ewallet">
               <option value="gopay">gopay</option>
@@ -302,7 +344,7 @@
               <option value="dana">dana</option>
             </select>
           </label>
-          <label>
+          <label class="field">
             callback_url
             <input
               name="callback_url"
@@ -314,53 +356,41 @@
         <div class="actions">
           <button type="submit" id="submitCharge">Create charge</button>
         </div>
-        <p id="formError" class="error" hidden></p>
+        <p id="formError" class="error" role="alert" hidden></p>
       </form>
-      <p class="hint">
-        The callback URL receives the webhook. If your app runs on the host and the simulator runs in Docker,
-        use
-        <code>host.docker.internal</code> instead of <code>localhost</code>.
+      <p class="note">
+        The callback URL receives the webhook. Inside Docker, use <code>host.docker.internal</code> for an app
+        on the host.
       </p>
     </section>
 
-    <section id="chargeResult" hidden>
-      <h2>Charge created</h2>
-      <p class="step">Keep this. You need the payment details to finish the flow.</p>
-      <dl id="chargeDetails"></dl>
-      <p class="hint" id="chargeHint"></p>
-    </section>
-
     <section>
-      <div class="row" style="justify-content: space-between">
-        <div>
-          <h2>3. Send the webhook</h2>
-          <p class="step">
-            Use Pay, Fail, or Expire on a PENDING transaction. Each click sends one signed webhook.
-          </p>
-        </div>
-        <button id="refresh" type="button" class="secondary">Refresh</button>
+      <div class="section-head">
+        <h2 class="section-title"><span class="num">03</span>Change the status</h2>
+        <button id="refresh" type="button" class="ghost">Refresh</button>
       </div>
-      <table>
-        <thead>
-          <tr>
-            <th>order_id</th>
-            <th>Method</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <p class="hint">The list refreshes every 3 seconds while this tab is visible.</p>
+      <p id="listStatus" class="note" role="status" hidden></p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Method</th>
+              <th class="amount">Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="note">Each action sends exactly one signed webhook. The list reloads every 3 seconds.</p>
     </section>
 
-    <section>
-      <details>
-        <summary>Last response</summary>
-        <pre id="output">No request yet.</pre>
-      </details>
-    </section>
+    <details>
+      <summary>Last response</summary>
+      <pre id="output">No request yet.</pre>
+    </details>
 
     <script src="/app.js"></script>
   </body>
